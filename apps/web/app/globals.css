@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* ── Design tokens ประจำสมาคม ─────────────────────────────
+   ค่าสีต้องตรงกับ lib/brand.ts เสมอ (OG renderer อ่านจากที่นั่น)  */
+@theme {
+  --color-noir: #141312;
+  --color-noir-soft: #1e1c1a;
+  --color-gold: #c9a96a;
+  --color-gold-dim: #8a7448;
+  --color-ivory: #f2ebdd;
+
+  --font-display: var(--font-trirong), Georgia, serif;
+  --font-body: var(--font-bai-jamjuree), system-ui, sans-serif;
+
+  /* ระยะห่างตัวอักษรของหัวเรื่องแบบราชสำนัก */
+  --tracking-court: 0.24em;
+}
+
+html {
+  /* ทุกชิ้นงานต้องจบใน 1 จอ — กันการเลื่อนโดยไม่ตั้งใจบนมือถือ */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-noir);
+  color: var(--color-ivory);
+  font-family: var(--font-body);
+  /* ลายพื้นทองจาง ๆ ให้พื้นหลังไม่แบนสนิท */
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 169, 106, 0.1), transparent),
+    radial-gradient(ellipse 60% 40% at 50% 110%, rgba(201, 169, 106, 0.06), transparent);
+  background-attachment: fixed;
+}
+
+::selection {
+  background-color: var(--color-gold);
+  color: var(--color-noir);
+}
+
+/* โฟกัสต้องมองเห็นชัดเสมอ — ข้อกำหนด accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

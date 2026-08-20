@@ -1,0 +1,18 @@
+{
+  "name": "maison-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MAISON ไร้สาระ — สมาคมความไร้สาระชั้นสูง",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "start": "pnpm --filter web start",
+    "lint": "pnpm --filter web lint",
+    "typecheck": "pnpm --filter web exec tsc --noEmit",
+    "test": "pnpm --filter web test"
+  },
+  "packageManager": "pnpm@11.8.0",
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
