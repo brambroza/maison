@@ -57,30 +57,30 @@ export default function Piece090({ meta, initialState, ledgerCount }: PieceProps
 
   return (
     <div className="flex flex-col items-center gap-8 text-center">
-      <p className="font-body text-[0.6rem] tracking-[0.28em] text-gold-dim uppercase">
+      <p className="font-display text-[0.68rem] font-semibold tracking-[0.2em] text-ink-soft uppercase">
         เวลาก่อนเสียงตู้มประจำปี
       </p>
 
       <p
-        className="font-display text-4xl tracking-[0.14em] text-gold tabular-nums sm:text-5xl"
+        className="card-stamp font-display -rotate-1 px-6 py-4 text-3xl font-bold tracking-[0.1em] text-lilac tabular-nums sm:text-4xl"
         aria-label="สมาคมไม่เปิดเผยเวลา"
       >
         {mask}
       </p>
 
-      <p className="font-body max-w-xs text-sm leading-relaxed text-ivory/55">
+      <p className="font-body max-w-xs text-sm leading-relaxed text-ink-soft">
         สมาคมขอสงวนสิทธิ์ในการไม่เปิดเผยวันเวลา ท่านสมาชิกทำได้เพียงเฝ้ารอ
       </p>
 
       <button
         type="button"
         onClick={handleJoin}
-        className="font-body cursor-pointer rounded-full border border-gold px-9 py-3 text-sm tracking-[0.16em] text-gold transition-colors hover:bg-gold hover:text-noir"
+        className="btn-stamp btn-stamp-hover font-display px-8 py-3 text-sm font-semibold sm:text-base"
       >
         ลงชื่อเป็นผู้เฝ้ารอ
       </button>
 
-      <p className="font-body text-[0.65rem] leading-relaxed text-ivory/35">
+      <p className="font-body text-[0.68rem] leading-relaxed font-light text-ink-soft/80">
         มีผู้เฝ้ารออยู่แล้ว {formatCount(count)} ท่าน
         <br />
         {COPY.ledgerNote}

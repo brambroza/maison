@@ -1,19 +1,23 @@
 @import "tailwindcss";
 
-/* ── Design tokens ประจำสมาคม ─────────────────────────────
+/* ── Design tokens ประจำสมาคม (ฉบับขี้เล่น) ─────────────────
    ค่าสีต้องตรงกับ lib/brand.ts เสมอ (OG renderer อ่านจากที่นั่น)  */
 @theme {
-  --color-noir: #141312;
-  --color-noir-soft: #1e1c1a;
-  --color-gold: #c9a96a;
-  --color-gold-dim: #8a7448;
-  --color-ivory: #f2ebdd;
+  --color-cream: #fff6e8;
+  --color-paper: #fffdf7;
+  --color-ink: #2e2a45;
+  --color-ink-soft: #6b6584;
+  --color-pop: #ff4d9d;
+  --color-sun: #ffc33c;
+  --color-lilac: #8c6cff;
+  --color-mint: #2ec4b6;
 
-  --font-display: var(--font-trirong), Georgia, serif;
-  --font-body: var(--font-bai-jamjuree), system-ui, sans-serif;
+  --font-display: var(--font-mali), "Comic Sans MS", cursive;
+  --font-body: var(--font-mitr), system-ui, sans-serif;
 
-  /* ระยะห่างตัวอักษรของหัวเรื่องแบบราชสำนัก */
-  --tracking-court: 0.24em;
+  /* เงาแข็งประจำสมาคม — ขยับตามระดับความสำคัญ */
+  --shadow-stamp: 4px 4px 0 0 var(--color-ink);
+  --shadow-stamp-lg: 7px 7px 0 0 var(--color-ink);
 }
 
 html {
@@ -22,25 +26,81 @@ html {
 }
 
 body {
-  background-color: var(--color-noir);
-  color: var(--color-ivory);
+  background-color: var(--color-cream);
+  color: var(--color-ink);
   font-family: var(--font-body);
-  /* ลายพื้นทองจาง ๆ ให้พื้นหลังไม่แบนสนิท */
+  /* ลายจุดลูกกวาดจาง ๆ ให้พื้นหลังดูขี้เล่นแต่ไม่แย่งซีน */
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 169, 106, 0.1), transparent),
-    radial-gradient(ellipse 60% 40% at 50% 110%, rgba(201, 169, 106, 0.06), transparent);
-  background-attachment: fixed;
+    radial-gradient(circle at 1px 1px, rgba(255, 77, 157, 0.14) 1.5px, transparent 0),
+    radial-gradient(circle at 13px 13px, rgba(140, 108, 255, 0.1) 1.5px, transparent 0);
+  background-size: 26px 26px;
 }
 
 ::selection {
-  background-color: var(--color-gold);
-  color: var(--color-noir);
+  background-color: var(--color-sun);
+  color: var(--color-ink);
 }
 
 /* โฟกัสต้องมองเห็นชัดเสมอ — ข้อกำหนด accessibility */
 :focus-visible {
-  outline: 2px solid var(--color-gold);
+  outline: 3px solid var(--color-pop);
   outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── ชิ้นส่วนมาตรฐานสไตล์ "ตราประทับสมาคม" ─────────────────
+   ขอบหมึกหนา + เงาแข็ง กดแล้วยุบเหมือนปั๊มตรายาง */
+
+@utility btn-stamp {
+  cursor: pointer;
+  border: 3px solid var(--color-ink);
+  border-radius: 9999px;
+  background-color: var(--color-pop);
+  color: var(--color-paper);
+  box-shadow: var(--shadow-stamp);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
+}
+@utility btn-stamp-hover {
+  &:hover {
+    transform: translate(-1px, -1px) rotate(-1deg);
+    box-shadow: 5px 5px 0 0 var(--color-ink);
+  }
+  &:active {
+    transform: translate(3px, 3px);
+    box-shadow: 1px 1px 0 0 var(--color-ink);
+  }
+}
+
+@utility btn-quiet {
+  cursor: pointer;
+  border: 3px solid var(--color-ink);
+  border-radius: 9999px;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-stamp);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
+  &:hover {
+    background-color: var(--color-sun);
+    transform: translate(-1px, -1px) rotate(1deg);
+    box-shadow: 5px 5px 0 0 var(--color-ink);
+  }
+  &:active {
+    transform: translate(3px, 3px);
+    box-shadow: 1px 1px 0 0 var(--color-ink);
+  }
+}
+
+@utility card-stamp {
+  border: 3px solid var(--color-ink);
+  border-radius: 1.25rem;
+  background-color: var(--color-paper);
+  box-shadow: var(--shadow-stamp-lg);
 }
 
 @media (prefers-reduced-motion: reduce) {

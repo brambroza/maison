@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   });
 
   const png = new Resvg(svg, {
-    font: { fontDirs: [FONT_DIR], loadSystemFonts: false, defaultFontFamily: "Bai Jamjuree" },
+    font: { fontDirs: [FONT_DIR], loadSystemFonts: false, defaultFontFamily: "Mitr" },
   })
     .render()
     .asPng();

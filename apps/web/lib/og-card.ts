@@ -1,5 +1,5 @@
 /**
- * ตัวสร้าง SVG ของการ์ดแชร์
+ * ตัวสร้าง SVG ของการ์ดแชร์ (ฉบับขี้เล่น)
  *
  * ทำไมจึงเขียน SVG เอง: next/og (satori) ยังวางวรรณยุกต์ที่ตามหลังสระบนผิดตำแหน่ง
  * คำว่า "ที่" จะถูกวาดเป็น "ที" ดู https://github.com/vercel/satori/issues/668
@@ -15,12 +15,12 @@ export const CARD_WIDTH = 1200;
 export const CARD_HEIGHT = 630;
 
 /** ชื่อตระกูลฟอนต์ตามที่ระบุไว้ในไฟล์ฟอนต์ */
-const FONT_DISPLAY = "Trirong";
-const FONT_BODY = "Bai Jamjuree";
+const FONT_DISPLAY = "Mali";
+const FONT_BODY = "Mitr";
 
 /** อักขระไทยที่ซ้อนบนหรือใต้พยัญชนะ จึงไม่กินความกว้าง */
 const ZERO_WIDTH_MARKS =
-  /[ัิีึืฺุู็่้๊๋์ํ๎]/u;
+  /[ัิีึืฺุู็่้๊๋์ํ๎]/u;
 
 /**
  * ประมาณความกว้างของข้อความเป็นพิกเซล
@@ -125,7 +125,7 @@ type TextBlockOptions = {
   fill: string;
   /** ระยะห่างระหว่างบรรทัด */
   lineHeight: number;
-  /** ระยะห่างระหว่างตัวอักษร ใช้กับหัวเรื่องแบบราชสำนัก */
+  /** ระยะห่างระหว่างตัวอักษร */
   letterSpacing?: number;
 };
 
@@ -148,6 +148,28 @@ function textBlock(
   return { svg, lastY: options.y + (lines.length - 1) * options.lineHeight };
 }
 
+/** จุดลูกกวาดโปรยตามมุมการ์ด ตำแหน่งคงที่เพื่อให้การ์ดเดิมหน้าตาเดิมเสมอ */
+function confetti(): string {
+  const dots: readonly [number, number, number, string, number][] = [
+    // [x, y, ขนาด, สี, องศาหมุน]
+    [128, 130, 13, COLORS.pop, 18],
+    [176, 96, 9, COLORS.sun, -12],
+    [1058, 118, 13, COLORS.mint, 30],
+    [1016, 168, 9, COLORS.lilac, -20],
+    [140, 508, 10, COLORS.lilac, 45],
+    [188, 546, 8, COLORS.mint, 10],
+    [1052, 512, 11, COLORS.sun, -30],
+    [1004, 552, 8, COLORS.pop, 15],
+  ];
+
+  return dots
+    .map(
+      ([x, y, size, fill, deg]) =>
+        `<rect x="${x}" y="${y}" width="${size}" height="${size}" rx="2.5" fill="${fill}" stroke="${COLORS.ink}" stroke-width="2.5" transform="rotate(${deg} ${x + size / 2} ${y + size / 2})"/>`,
+    )
+    .join("\n  ");
+}
+
 export type CardInput = {
   /** เลขประจำชิ้นงาน */
   id: string;
@@ -168,68 +190,65 @@ export type CardInput = {
 export function renderCardSvg({ id, title, outcome, tagline }: CardInput): string {
   const parts: string[] = [];
 
-  // ตราสมาคมรูปข้าวหลามตัด วาดด้วยกล่องหมุน 45 องศา
+  // ป้ายชื่อสมาคมเอียงเล็กน้อยเหมือนสติกเกอร์
+  // ตรา ✦ วาดเป็นข้าวหลามตัดเอง เพราะฟอนต์ Mali ไม่มีอักขระนี้ (จะกลายเป็นกล่องเปล่า)
+  const brandWidth = estimateWidth(BRAND.name, 24) + 108;
+  const markX = CARD_WIDTH / 2 - brandWidth / 2 + 28;
   parts.push(
-    `<rect x="${CARD_WIDTH / 2 - 5}" y="88" width="10" height="10" fill="${COLORS.gold}" transform="rotate(45 ${CARD_WIDTH / 2} 93)"/>`,
+    `<g transform="rotate(-2 ${CARD_WIDTH / 2} 118)">
+    <rect x="${CARD_WIDTH / 2 - brandWidth / 2}" y="94" width="${brandWidth}" height="48" rx="24" fill="${COLORS.sun}" stroke="${COLORS.ink}" stroke-width="4"/>
+    <rect x="${markX - 6}" y="112" width="12" height="12" rx="2" fill="${COLORS.pop}" stroke="${COLORS.ink}" stroke-width="2.5" transform="rotate(45 ${markX} 118)"/>
+    <text x="${CARD_WIDTH / 2 + 16}" y="127" text-anchor="middle" font-family="${FONT_DISPLAY}" font-size="24" font-weight="700" fill="${COLORS.ink}" letter-spacing="2">${escapeXml(BRAND.name)}</text>
+  </g>`,
   );
 
+  // ป้ายเลขชิ้นงานสีชมพู
   parts.push(
-    textBlock([BRAND.name], {
-      y: 138,
-      fontFamily: FONT_BODY,
-      fontSize: 22,
-      fontWeight: 400,
-      fill: COLORS.goldDim,
-      lineHeight: 0,
-      letterSpacing: 8,
-    }).svg,
-  );
-
-  parts.push(
-    textBlock([`Nº ${id}`], {
-      y: 190,
-      fontFamily: FONT_BODY,
-      fontSize: 20,
-      fontWeight: 400,
-      fill: COLORS.gold,
-      lineHeight: 0,
-      letterSpacing: 6,
-    }).svg,
+    `<g transform="rotate(2 ${CARD_WIDTH / 2} 184)">
+    <rect x="${CARD_WIDTH / 2 - 62}" y="164" width="124" height="40" rx="10" fill="${COLORS.pop}" stroke="${COLORS.ink}" stroke-width="3.5"/>
+    <text x="${CARD_WIDTH / 2}" y="192" text-anchor="middle" font-family="${FONT_DISPLAY}" font-size="22" font-weight="700" fill="${COLORS.paper}" letter-spacing="3">${escapeXml(`Nº ${id}`)}</text>
+  </g>`,
   );
 
   parts.push(
     textBlock(wrapText(title, 46, 860), {
-      y: 240,
+      y: 262,
       fontFamily: FONT_DISPLAY,
       fontSize: 46,
-      fontWeight: 600,
-      fill: COLORS.ivory,
+      fontWeight: 700,
+      fill: COLORS.ink,
       lineHeight: 58,
     }).svg,
   );
 
+  // เส้นหยักลูกคลื่นคั่นกลาง
+  const waveY = 296;
+  const wave = Array.from({ length: 8 }, (_, i) => {
+    const x = CARD_WIDTH / 2 - 112 + i * 28;
+    return `Q ${x + 14} ${waveY - 12}, ${x + 28} ${waveY}`;
+  }).join(" ");
   parts.push(
-    `<line x1="${CARD_WIDTH / 2 - 110}" y1="282" x2="${CARD_WIDTH / 2 + 110}" y2="282" stroke="${COLORS.goldDim}" stroke-width="1"/>`,
+    `<path d="M ${CARD_WIDTH / 2 - 112} ${waveY} ${wave}" stroke="${COLORS.pop}" stroke-width="5" fill="none" stroke-linecap="round"/>`,
   );
 
   if (outcome) {
     const headlineLines = wrapText(outcome.headline, 74, 940);
     const headline = textBlock(headlineLines, {
-      y: 380,
+      y: 396,
       fontFamily: FONT_DISPLAY,
       fontSize: 74,
-      fontWeight: 600,
-      fill: COLORS.gold,
+      fontWeight: 700,
+      fill: COLORS.pop,
       lineHeight: 84,
     });
     parts.push(headline.svg);
 
     const verdict = textBlock(wrapText(outcome.verdict, 30, 860), {
-      y: headline.lastY + 66,
+      y: headline.lastY + 64,
       fontFamily: FONT_BODY,
       fontSize: 30,
       fontWeight: 400,
-      fill: COLORS.ivory,
+      fill: COLORS.ink,
       lineHeight: 46,
     });
     parts.push(verdict.svg);
@@ -237,11 +256,11 @@ export function renderCardSvg({ id, title, outcome, tagline }: CardInput): strin
     if (outcome.note) {
       parts.push(
         textBlock(wrapText(outcome.note, 20, 820), {
-          y: verdict.lastY + 44,
+          y: verdict.lastY + 42,
           fontFamily: FONT_BODY,
           fontSize: 20,
           fontWeight: 400,
-          fill: "rgb(160,153,140)",
+          fill: COLORS.inkSoft,
           lineHeight: 30,
         }).svg,
       );
@@ -249,26 +268,22 @@ export function renderCardSvg({ id, title, outcome, tagline }: CardInput): strin
   } else {
     parts.push(
       textBlock(wrapText(tagline, 32, 860), {
-        y: 380,
+        y: 396,
         fontFamily: FONT_BODY,
         fontSize: 32,
         fontWeight: 400,
-        fill: COLORS.ivory,
+        fill: COLORS.ink,
         lineHeight: 48,
       }).svg,
     );
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" viewBox="0 0 ${CARD_WIDTH} ${CARD_HEIGHT}">
-  <defs>
-    <radialGradient id="glow" cx="50%" cy="0%" r="70%">
-      <stop offset="0%" stop-color="${COLORS.gold}" stop-opacity="0.16"/>
-      <stop offset="100%" stop-color="${COLORS.gold}" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="${CARD_WIDTH}" height="${CARD_HEIGHT}" fill="${COLORS.noir}"/>
-  <rect width="${CARD_WIDTH}" height="${CARD_HEIGHT}" fill="url(#glow)"/>
-  <rect x="56" y="56" width="${CARD_WIDTH - 112}" height="${CARD_HEIGHT - 112}" fill="none" stroke="${COLORS.goldDim}" stroke-width="1"/>
+  <rect width="${CARD_WIDTH}" height="${CARD_HEIGHT}" fill="${COLORS.cream}"/>
+  <!-- เงาแข็งของกรอบ วางก่อนกรอบจริงให้ดูนูน -->
+  <rect x="52" y="56" width="${CARD_WIDTH - 96}" height="${CARD_HEIGHT - 104}" rx="28" fill="${COLORS.ink}"/>
+  <rect x="40" y="44" width="${CARD_WIDTH - 96}" height="${CARD_HEIGHT - 104}" rx="28" fill="${COLORS.paper}" stroke="${COLORS.ink}" stroke-width="4"/>
+  ${confetti()}
   ${parts.join("\n  ")}
 </svg>`;
 }

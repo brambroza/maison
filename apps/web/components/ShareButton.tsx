@@ -35,7 +35,7 @@ export function ShareButton({ pieceId, pieceTitle, state }: ShareButtonProps) {
     <button
       type="button"
       onClick={handleShare}
-      className="font-body cursor-pointer rounded-full border border-gold px-7 py-2.5 text-xs tracking-[0.16em] text-gold transition-colors hover:bg-gold hover:text-noir sm:text-sm"
+      className="btn-stamp btn-stamp-hover font-display px-7 py-2.5 text-sm font-semibold sm:text-base"
     >
       {label}
     </button>

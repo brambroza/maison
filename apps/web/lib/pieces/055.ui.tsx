@@ -43,7 +43,7 @@ export default function Piece055({ meta, initialState }: PieceProps) {
   return (
     <div className="flex w-full max-w-sm flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <label htmlFor="task" className="font-body text-sm text-ivory/60">
+        <label htmlFor="task" className="font-body text-sm text-ink-soft">
           งานที่ท่านสมาชิกดองไว้
         </label>
         <input
@@ -53,12 +53,12 @@ export default function Piece055({ meta, initialState }: PieceProps) {
           onChange={(event) => setTask(event.target.value)}
           maxLength={MAX_FREE_TEXT}
           placeholder="ตอบแชทกลุ่มงาน"
-          className="font-body w-full rounded-sm border border-gold-dim/45 bg-noir-soft/70 px-4 py-3 text-sm text-ivory placeholder:text-ivory/25"
+          className="font-body w-full rounded-xl border-[3px] border-ink bg-paper px-4 py-3 text-sm text-ink shadow-[3px_3px_0_0_var(--color-ink)] placeholder:text-ink-soft/50"
         />
       </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="font-body mb-1 text-sm text-ivory/60">ดองมาแล้วเป็นเวลา</legend>
+        <legend className="font-body mb-1 text-sm text-ink-soft">ดองมาแล้วเป็นเวลา</legend>
 
         <div className="flex flex-wrap gap-2">
           {DURATION_OPTIONS.map((option) => (
@@ -67,10 +67,10 @@ export default function Piece055({ meta, initialState }: PieceProps) {
               type="button"
               onClick={() => setDays(option.days)}
               aria-pressed={days === option.days}
-              className={`font-body cursor-pointer rounded-full border px-4 py-2 text-xs transition-colors ${
+              className={`font-body cursor-pointer rounded-full border-[3px] border-ink px-4 py-2 text-xs transition-all ${
                 days === option.days
-                  ? "border-gold bg-gold text-noir"
-                  : "border-gold-dim/40 text-ivory/70 hover:border-gold hover:text-gold"
+                  ? "-rotate-2 bg-sun font-medium text-ink shadow-[2px_2px_0_0_var(--color-ink)]"
+                  : "bg-paper text-ink-soft hover:bg-sun/40 hover:text-ink"
               }`}
             >
               {option.label}
@@ -83,7 +83,7 @@ export default function Piece055({ meta, initialState }: PieceProps) {
         type="button"
         onClick={handleSubmit}
         disabled={task.trim().length === 0}
-        className="font-body cursor-pointer self-center rounded-full border border-gold px-7 py-2.5 text-xs tracking-[0.16em] text-gold transition-colors hover:bg-gold hover:text-noir disabled:cursor-not-allowed disabled:border-gold-dim/40 disabled:text-gold-dim/40 disabled:hover:bg-transparent"
+        className="btn-stamp btn-stamp-hover font-display px-7 py-2.5 text-sm font-semibold self-center disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-0 disabled:hover:shadow-[4px_4px_0_0_var(--color-ink)]"
       >
         ขอรับใบรับรอง
       </button>

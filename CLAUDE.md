@@ -15,8 +15,8 @@
 | LINE OA | @maisonraisara (ซื้อ Premium ID) · ชื่อแสดง "MAISON ไร้สาระ ✦" |
 | TikTok | @maison.raisara |
 | Facebook | MAISON ไร้สาระ |
-| สี | Noir #141312 · Gold #C9A96A · Ivory #F2EBDD |
-| ฟอนต์ | Trirong (display) · Bai Jamjuree (body) |
+| สี | Cream #FFF6E8 · Ink #2E2A45 · Pop #FF4D9D · Sun #FFC33C · Lilac #8C6CFF · Mint #2EC4B6 |
+| ฟอนต์ | Mali (display) · Mitr (body) |
 | Voice | ภาษาราชสำนักปนบัตเลอร์ เรียกผู้ใช้ว่า "ท่านสมาชิก" ไม่มีอิโมจิยกเว้น ✦ |
 | ตัวละครประจำแบรนด์ | "บัตเลอร์" — ตอบทุกอย่างสุภาพเว่อร์ และไม่เคยรีบ |
 
@@ -193,3 +193,10 @@ maison-raisara/  (monorepo — GitHub)
 ### ยังไม่ได้ทำในรอบนี้
 LINE OA · LIFF · บัตเลอร์ตอบแชทด้วย Claude API · Supabase · โดเมนจริง ·
 บัญชี TikTok/Facebook · `.claude/commands` และ sub-agents · Cowork weekly loop
+
+### ทิศทางดีไซน์ v2 (2026-08-20)
+เปลี่ยนจาก luxury noir/gold เป็น "สมาคมทางการที่ใช้สีลูกกวาด" ตามคำสั่งเจ้าของแบรนด์ —
+ขอบหมึกหนา 3px + เงาแข็ง (แบบ neo-brutalism ขี้เล่น) ป้ายเอียง เส้นหยัก จุดลูกกวาด
+ถ้อยคำยังทางการเว่อร์เหมือนเดิม มุกอยู่ที่ความขัดกันระหว่างภาษากับหน้าตา
+- ชิ้นส่วนมาตรฐาน: `btn-stamp` `btn-quiet` `card-stamp` ใน app/globals.css
+- ตรา ✦ บนการ์ดแชร์วาดเป็นข้าวหลามตัดเอง เพราะฟอนต์ Mali ไม่มี glyph นี้

@@ -42,7 +42,7 @@ export default function Piece064({ meta, initialState, ledgerCount }: PieceProps
         <button
           type="button"
           onClick={handlePress}
-          className="font-body cursor-pointer text-[0.7rem] tracking-[0.14em] text-gold-dim underline-offset-4 transition-colors hover:text-gold hover:underline"
+          className="font-body cursor-pointer text-[0.72rem] text-ink-soft underline decoration-wavy decoration-pop/60 underline-offset-4 transition-colors hover:text-ink"
         >
           กดอีกครั้ง (สมาคมยังคงขอร้องว่าอย่ากด)
         </button>
@@ -52,7 +52,7 @@ export default function Piece064({ meta, initialState, ledgerCount }: PieceProps
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <p className="font-body max-w-xs text-center text-sm leading-relaxed text-ivory/60">
+      <p className="font-body max-w-xs text-center text-sm leading-relaxed text-ink-soft">
         สมาคมขอความกรุณาท่านสมาชิกอย่ากดปุ่มนี้
       </p>
 
@@ -60,12 +60,12 @@ export default function Piece064({ meta, initialState, ledgerCount }: PieceProps
         type="button"
         onClick={handlePress}
         aria-label="ปุ่มต้องห้าม"
-        className="font-display h-36 w-36 cursor-pointer rounded-full border border-gold bg-gradient-to-b from-gold/25 to-transparent text-base tracking-[0.2em] text-gold shadow-[0_0_70px_-15px_rgba(201,169,106,0.65)] transition-transform duration-150 hover:scale-[1.03] active:scale-95 sm:h-44 sm:w-44 sm:text-lg"
+        className="font-display h-36 w-36 cursor-pointer rounded-full border-4 border-ink bg-pop text-lg font-bold text-paper shadow-[6px_6px_0_0_var(--color-ink)] transition-all duration-150 hover:-translate-y-0.5 hover:rotate-2 hover:shadow-[8px_8px_0_0_var(--color-ink)] active:translate-y-1 active:shadow-[2px_2px_0_0_var(--color-ink)] sm:h-44 sm:w-44 sm:text-xl"
       >
         อย่ากด
       </button>
 
-      <p className="font-body text-center text-[0.65rem] leading-relaxed text-ivory/35">
+      <p className="font-body text-center text-[0.68rem] leading-relaxed font-light text-ink-soft/80">
         มีผู้ฝ่าฝืนแล้ว {formatCount(count)} ท่าน
         <br />
         {COPY.ledgerNote}

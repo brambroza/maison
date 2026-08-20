@@ -29,7 +29,7 @@ export default function Piece031({ meta, initialState }: PieceProps) {
 
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-6">
-      <p className="font-body text-center text-sm leading-relaxed text-ivory/60">
+      <p className="font-body text-center text-sm leading-relaxed text-ink-soft">
         ผู้ใดเป็นผู้กล่าวคำว่า “ไม่เป็นไร” แก่ท่าน
       </p>
 
@@ -39,7 +39,7 @@ export default function Piece031({ meta, initialState }: PieceProps) {
             <button
               type="button"
               onClick={() => setState({ v: index })}
-              className="font-body w-full cursor-pointer rounded-sm border border-gold-dim/40 bg-noir-soft/50 px-5 py-3 text-sm text-ivory/85 transition-colors hover:border-gold hover:text-gold"
+              className="btn-quiet font-body w-full px-5 py-3 text-sm"
             >
               {speaker}
             </button>

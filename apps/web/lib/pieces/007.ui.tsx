@@ -38,7 +38,7 @@ export default function Piece007({ meta, initialState }: PieceProps) {
 
   return (
     <div className="flex w-full max-w-md flex-col items-center gap-5">
-      <label htmlFor="message" className="font-body text-center text-sm text-ivory/60">
+      <label htmlFor="message" className="font-body text-center text-sm text-ink-soft">
         โปรดวางถ้อยคำที่ท่านได้รับมา
       </label>
 
@@ -49,10 +49,10 @@ export default function Piece007({ meta, initialState }: PieceProps) {
         rows={4}
         maxLength={500}
         placeholder="ค่ะ"
-        className="font-body w-full resize-none rounded-sm border border-gold-dim/45 bg-noir-soft/70 px-4 py-3 text-sm text-ivory placeholder:text-ivory/25"
+        className="font-body w-full rounded-xl border-[3px] border-ink bg-paper px-4 py-3 text-sm text-ink shadow-[3px_3px_0_0_var(--color-ink)] placeholder:text-ink-soft/50 resize-none"
       />
 
-      <p className="font-body text-center text-[0.62rem] text-ivory/35">
+      <p className="font-body text-center text-[0.66rem] font-light text-ink-soft/80">
         สมาคมตรวจสอบภายในเครื่องของท่าน ถ้อยคำไม่ถูกส่งไปยังผู้ใด
       </p>
 
@@ -60,12 +60,12 @@ export default function Piece007({ meta, initialState }: PieceProps) {
         type="button"
         onClick={handleSubmit}
         disabled={message.trim().length === 0}
-        className="font-body cursor-pointer rounded-full border border-gold px-7 py-2.5 text-xs tracking-[0.16em] text-gold transition-colors hover:bg-gold hover:text-noir disabled:cursor-not-allowed disabled:border-gold-dim/40 disabled:text-gold-dim/40 disabled:hover:bg-transparent"
+        className="btn-stamp btn-stamp-hover font-display px-7 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-0 disabled:hover:shadow-[4px_4px_0_0_var(--color-ink)]"
       >
         ขอรับการวินิจฉัย
       </button>
 
-      <p className="font-body text-center text-[0.6rem] text-ivory/25">
+      <p className="font-body text-center text-[0.64rem] font-light text-ink-soft/70">
         {labelFor(2)} คือค่ากลางตามมาตรฐานสมาคม
       </p>
     </div>

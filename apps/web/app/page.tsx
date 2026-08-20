@@ -10,59 +10,94 @@ export const metadata: Metadata = {
   },
 };
 
+/** สีป้ายเลขชิ้นงาน วนใช้ตามลำดับให้ชั้นวางดูมีชีวิต */
+const BADGE_COLORS = ["bg-pop", "bg-sun", "bg-lilac", "bg-mint"] as const;
+
+/** ตัวอักษรบนป้ายต้องอ่านออกบนทุกสีพื้น — เหลือง/มิ้นต์ใช้หมึกเข้ม */
+const BADGE_TEXT: Record<(typeof BADGE_COLORS)[number], string> = {
+  "bg-pop": "text-paper",
+  "bg-sun": "text-ink",
+  "bg-lilac": "text-paper",
+  "bg-mint": "text-ink",
+};
+
 /** หน้าตู้โชว์คอลเลกชัน — รายชื่อชิ้นงานทั้งหมดของสมาคม */
 export default function PortalPage() {
   const pieces = getReleasedPieces();
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-5 py-16 sm:px-8 sm:py-24">
+    <main className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8 sm:py-16">
       <header className="text-center">
-        <p className="font-body text-[0.6rem] tracking-[0.34em] text-gold-dim uppercase sm:text-xs">
+        <p className="font-display inline-block -rotate-2 rounded-full border-[3px] border-ink bg-sun px-4 py-1 text-[0.65rem] font-semibold tracking-[0.14em] text-ink shadow-[3px_3px_0_0_var(--color-ink)] sm:text-xs">
           {BRAND.mark} {BRAND.tagline}
         </p>
 
-        <h1 className="font-display mt-4 text-4xl leading-tight font-semibold text-ivory sm:text-5xl">
+        <h1 className="font-display mt-5 text-4xl leading-tight font-bold text-ink sm:text-5xl">
           {BRAND.name}
         </h1>
 
-        <p className="font-body mt-4 text-sm text-ivory/50 sm:text-base">{BRAND.motto}</p>
+        <p className="font-body mt-3 text-sm font-light text-ink-soft sm:text-base">
+          {BRAND.motto}
+        </p>
 
-        <div className="mx-auto mt-10 flex w-40 items-center gap-2" aria-hidden="true">
-          <span className="h-px flex-1 bg-gradient-to-r from-transparent to-gold-dim" />
-          <span className="text-[0.55rem] text-gold">{BRAND.mark}</span>
-          <span className="h-px flex-1 bg-gradient-to-l from-transparent to-gold-dim" />
-        </div>
+        <svg
+          className="mx-auto mt-6 h-3 w-44 text-pop"
+          viewBox="0 0 176 12"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M2 8 Q 11 1, 20 8 T 38 8 T 56 8 T 74 8 T 92 8 T 110 8 T 128 8 T 146 8 T 164 8 T 174 8"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+        </svg>
       </header>
 
-      <p className="font-body mt-10 text-center text-[0.62rem] tracking-[0.28em] text-gold-dim uppercase">
+      <p className="font-display mt-9 text-center text-[0.7rem] font-semibold tracking-[0.2em] text-ink-soft uppercase">
         คอลเลกชันประจำฤดูกาล
       </p>
 
-      <ul className="mt-6 flex flex-col">
-        {pieces.map((piece) => (
-          <li key={piece.id}>
-            <Link
-              href={`/n/${piece.id}`}
-              className="group flex items-baseline gap-4 border-b border-gold-dim/20 py-5 transition-colors hover:border-gold-dim/60"
-            >
-              <span className="font-display shrink-0 text-xs tracking-[0.18em] text-gold-dim transition-colors group-hover:text-gold">
-                Nº {piece.id}
-              </span>
+      <ul className="mt-6 flex flex-col gap-4">
+        {pieces.map((piece, index) => {
+          const badge = BADGE_COLORS[index % BADGE_COLORS.length];
+          const tilt = index % 2 === 0 ? "hover:-rotate-1" : "hover:rotate-1";
 
-              <span className="flex min-w-0 flex-col">
-                <span className="font-display text-lg leading-snug text-ivory transition-colors group-hover:text-gold sm:text-xl">
-                  {piece.title}
+          return (
+            <li key={piece.id}>
+              <Link
+                href={`/n/${piece.id}`}
+                className={`card-stamp group flex items-center gap-4 px-5 py-4 transition-transform duration-150 hover:-translate-y-0.5 ${tilt}`}
+              >
+                <span
+                  className={`font-display grid h-12 w-12 shrink-0 rotate-3 place-items-center rounded-xl border-[3px] border-ink text-sm font-bold transition-transform group-hover:-rotate-3 ${badge} ${BADGE_TEXT[badge]}`}
+                >
+                  {piece.id}
                 </span>
-                <span className="font-body mt-1 text-[0.78rem] leading-relaxed text-ivory/45">
-                  {piece.subtitle}
+
+                <span className="flex min-w-0 flex-col">
+                  <span className="font-display text-lg leading-snug font-bold text-ink sm:text-xl">
+                    {piece.title}
+                  </span>
+                  <span className="font-body mt-0.5 text-[0.78rem] leading-relaxed font-light text-ink-soft">
+                    {piece.subtitle}
+                  </span>
                 </span>
-              </span>
-            </Link>
-          </li>
-        ))}
+
+                <span
+                  className="font-display ml-auto shrink-0 text-lg text-pop opacity-0 transition-opacity group-hover:opacity-100"
+                  aria-hidden="true"
+                >
+                  →
+                </span>
+              </Link>
+            </li>
+          );
+        })}
       </ul>
 
-      <footer className="font-body mt-14 text-center text-[0.6rem] leading-loose tracking-[0.2em] text-gold-dim/70 uppercase">
+      <footer className="font-display mt-12 text-center text-[0.68rem] leading-loose font-semibold tracking-[0.12em] text-ink-soft/80">
         {BRAND.mark} ทุกชิ้นงานรังสรรค์ด้วยมือช่างฝีมือของสมาคม
       </footer>
     </main>

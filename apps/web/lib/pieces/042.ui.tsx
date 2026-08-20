@@ -71,15 +71,15 @@ export default function Piece042({ meta, initialState }: PieceProps) {
 
     return (
       <div className="flex flex-col items-center gap-6 text-center">
-        <p className="font-body text-[0.6rem] tracking-[0.28em] text-gold-dim uppercase">
+        <p className="font-display text-[0.68rem] font-semibold tracking-[0.2em] text-ink-soft uppercase">
           ที่ประชุมกำลังพิจารณา
         </p>
 
-        <p className="font-display text-2xl text-gold sm:text-3xl" aria-live="polite">
+        <p className="font-display text-2xl font-bold text-pop sm:text-3xl" aria-live="polite">
           {AGENDA[agendaIndex]}
         </p>
 
-        <p className="font-body text-sm text-ivory/45 tabular-nums">
+        <p className="font-body text-sm font-light text-ink-soft tabular-nums">
           เหลืออีก {remaining} วินาที
         </p>
       </div>
@@ -88,7 +88,7 @@ export default function Piece042({ meta, initialState }: PieceProps) {
 
   return (
     <div className="flex flex-col items-center gap-8 text-center">
-      <p className="font-body max-w-xs text-sm leading-relaxed text-ivory/60">
+      <p className="font-body max-w-xs text-sm leading-relaxed text-ink-soft">
         โปรดยื่นวาระต่อคณะกรรมการ ระเบียบสมาคมกำหนดให้ประชุมอย่างน้อย{" "}
         {DELIBERATION_SECONDS} วินาที
       </p>
@@ -96,7 +96,7 @@ export default function Piece042({ meta, initialState }: PieceProps) {
       <button
         type="button"
         onClick={handleRequest}
-        className="font-body cursor-pointer rounded-full border border-gold px-9 py-3 text-sm tracking-[0.16em] text-gold transition-colors hover:bg-gold hover:text-noir"
+        className="btn-stamp btn-stamp-hover font-display px-8 py-3 text-sm font-semibold sm:text-base"
       >
         ขอมติที่ประชุม
       </button>

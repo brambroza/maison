@@ -62,14 +62,14 @@ export default function Piece018({ meta, initialState }: PieceProps) {
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <p className="font-body max-w-xs text-center text-sm leading-relaxed text-ivory/60">
+      <p className="font-body max-w-xs text-center text-sm leading-relaxed text-ink-soft">
         {running
           ? "สมาคมกำลังจับเวลาอยู่ โปรดกดหยุดเมื่อท่านกลับมา"
           : "โปรดกดเมื่อท่านสมาชิกกล่าวคำว่า แป๊บนึง"}
       </p>
 
       <p
-        className="font-display text-5xl text-gold tabular-nums sm:text-6xl"
+        className="card-stamp font-display rotate-1 px-7 py-4 text-4xl font-bold text-pop tabular-nums sm:text-5xl"
         aria-live="polite"
       >
         {formatDuration(elapsed)}
@@ -78,7 +78,7 @@ export default function Piece018({ meta, initialState }: PieceProps) {
       <button
         type="button"
         onClick={running ? handleStop : handleStart}
-        className="font-body cursor-pointer rounded-full border border-gold px-9 py-3 text-sm tracking-[0.16em] text-gold transition-colors hover:bg-gold hover:text-noir"
+        className="btn-stamp btn-stamp-hover font-display px-8 py-3 text-sm font-semibold sm:text-base"
       >
         {running ? "กลับมาแล้ว" : "เริ่มจับเวลา"}
       </button>

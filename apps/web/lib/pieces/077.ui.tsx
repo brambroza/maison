@@ -46,11 +46,11 @@ export default function Piece077({ meta, initialState }: PieceProps) {
 
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-8 text-center">
-      <p className="font-body text-[0.6rem] tracking-[0.28em] text-gold-dim uppercase">
+      <p className="font-display text-[0.68rem] font-semibold tracking-[0.2em] text-ink-soft uppercase">
         ข้อ {answers.length + 1} จาก {QUESTIONS.length}
       </p>
 
-      <p className="font-display min-h-24 text-xl leading-relaxed text-ivory sm:text-2xl">
+      <p className="font-display min-h-24 text-xl leading-relaxed font-semibold text-ink sm:text-2xl">
         {current.text}
       </p>
 
@@ -58,7 +58,7 @@ export default function Piece077({ meta, initialState }: PieceProps) {
         <button
           type="button"
           onClick={() => answer(true)}
-          className="font-body cursor-pointer rounded-full border border-gold px-8 py-2.5 text-sm tracking-[0.16em] text-gold transition-colors hover:bg-gold hover:text-noir"
+          className="btn-stamp btn-stamp-hover font-display px-9 py-2.5 text-sm font-semibold"
         >
           ใช่
         </button>
@@ -66,7 +66,7 @@ export default function Piece077({ meta, initialState }: PieceProps) {
         <button
           type="button"
           onClick={() => answer(false)}
-          className="font-body cursor-pointer rounded-full border border-gold-dim/50 px-8 py-2.5 text-sm tracking-[0.16em] text-ivory/70 transition-colors hover:border-gold hover:text-gold"
+          className="btn-quiet font-display px-9 py-2.5 text-sm font-semibold"
         >
           ไม่ใช่
         </button>
@@ -76,8 +76,8 @@ export default function Piece077({ meta, initialState }: PieceProps) {
         {QUESTIONS.map((question, index) => (
           <span
             key={question.text}
-            className={`h-1 w-6 rounded-full ${
-              index < answers.length ? "bg-gold" : "bg-gold-dim/25"
+            className={`h-2 w-6 rounded-full border-2 border-ink ${
+              index < answers.length ? "bg-pop" : "bg-ink/15"
             }`}
           />
         ))}

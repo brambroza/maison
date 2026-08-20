@@ -1,20 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Trirong, Bai_Jamjuree } from "next/font/google";
+import { Mali, Mitr } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { BRAND, COLORS, getBaseUrl } from "@/lib/brand";
 import "./globals.css";
 
-const trirong = Trirong({
-  variable: "--font-trirong",
+const mali = Mali({
+  variable: "--font-mali",
   subsets: ["thai", "latin"],
-  weight: ["300", "400", "600"],
+  weight: ["500", "600", "700"],
   display: "swap",
 });
 
-const baiJamjuree = Bai_Jamjuree({
-  variable: "--font-bai-jamjuree",
+const mitr = Mitr({
+  variable: "--font-mitr",
   subsets: ["thai", "latin"],
-  weight: ["300", "400", "600"],
+  weight: ["300", "400", "500"],
   display: "swap",
 });
 
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: COLORS.noir,
+  themeColor: COLORS.cream,
   // กันการซูมโดยไม่ตั้งใจตอนกดปุ่มรัว ๆ แต่ยังซูมด้วยสองนิ้วได้
   maximumScale: 5,
 };
@@ -43,7 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="th"
-      className={`${trirong.variable} ${baiJamjuree.variable} h-full antialiased`}
+      className={`${mali.variable} ${mitr.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         {children}
