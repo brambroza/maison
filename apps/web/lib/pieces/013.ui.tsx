@@ -98,29 +98,53 @@ export default function Piece013({ meta, initialState }: PieceProps) {
         โปรดถวายรูปทรงผมปัจจุบัน เพื่อให้สมาคมวิเคราะห์ว่าท่านควรตัดผมหรือยัง
       </p>
 
-      <label className="btn-quiet font-body flex cursor-pointer flex-col items-center gap-2 px-8 py-6 text-sm">
-        {photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- รูปเป็น blob URL ในเครื่อง next/image ใช้ไม่ได้
-          <img
-            src={photoUrl}
-            alt="ตัวอย่างรูปที่เลือก"
-            className="h-24 w-24 rounded-xl border-2 border-ink object-cover"
-          />
-        ) : (
-          <svg viewBox="0 0 24 24" className="h-9 w-9 text-ink" fill="none" aria-hidden="true">
-            <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="2" />
-            <circle cx="6" cy="6" r="3" stroke="currentColor" strokeWidth="2" />
-            <path d="M8.5 7.8 20 16M8.5 16.2 20 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        )}
-        <span>{photoUrl ? "เปลี่ยนรูป" : "เลือกรูปจากเครื่อง"}</span>
-        <input
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(event) => handlePhoto(event.target.files?.[0])}
+      {photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- รูปเป็น blob URL ในเครื่อง next/image ใช้ไม่ได้
+        <img
+          src={photoUrl}
+          alt="ตัวอย่างรูปที่เลือก"
+          className="h-28 w-28 -rotate-2 rounded-2xl border-[3px] border-ink object-cover shadow-[4px_4px_0_0_var(--color-ink)]"
         />
-      </label>
+      ) : (
+        <svg viewBox="0 0 24 24" className="h-9 w-9 text-ink-soft" fill="none" aria-hidden="true">
+          <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="2" />
+          <circle cx="6" cy="6" r="3" stroke="currentColor" strokeWidth="2" />
+          <path d="M8.5 7.8 20 16M8.5 16.2 20 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      )}
+
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        {/* เปิดกล้องหน้าบนมือถือ (เหมาะกับส่องทรงผมตนเอง) — เดสก์ท็อปถอยเป็นตัวเลือกไฟล์ */}
+        <label className="btn-stamp btn-stamp-hover font-display flex cursor-pointer items-center gap-2 px-6 py-2.5 text-sm font-semibold">
+          <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" aria-hidden="true">
+            <path
+              d="M4 8a2 2 0 0 1 2-2h1.5l1.2-1.8A1 1 0 0 1 9.5 3.7h5a1 1 0 0 1 .8.5L16.5 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+            <circle cx="12" cy="12.5" r="3.2" stroke="currentColor" strokeWidth="2" />
+          </svg>
+          {photoUrl ? "ถ่ายใหม่" : "ถ่ายรูปเดี๋ยวนี้"}
+          <input
+            type="file"
+            accept="image/*"
+            capture="user"
+            className="hidden"
+            onChange={(event) => handlePhoto(event.target.files?.[0])}
+          />
+        </label>
+
+        <label className="btn-quiet font-body cursor-pointer px-5 py-2.5 text-xs">
+          {photoUrl ? "เลือกรูปอื่น" : "เลือกรูปจากเครื่อง"}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(event) => handlePhoto(event.target.files?.[0])}
+          />
+        </label>
+      </div>
 
       <p className="font-body text-[0.66rem] leading-relaxed font-light text-ink-soft/80">
         รูปอยู่ในเครื่องของท่านเท่านั้น สมาคมมิได้เห็น แต่วิเคราะห์ได้
