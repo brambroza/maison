@@ -4,6 +4,7 @@ import { Frame } from "@/components/Frame";
 import { readCount } from "@/lib/ledger-server";
 import { PIECE_UI, getPieceLogic } from "@/lib/pieces";
 import { getPiece } from "@/lib/registry";
+import { getBaseUrl } from "@/lib/brand";
 import { parseShareState, toShareQuery } from "@/lib/share";
 
 type PageParams = { params: Promise<{ id: string }>; searchParams: Promise<SearchParams> };
@@ -27,7 +28,9 @@ export async function generateMetadata({
 
   return {
     title: piece.title,
-    description: piece.ogTagline,
+    // สำหรับ search engine / AI ใช้ภาษาตรง ๆ มีคำค้น — ส่วน og ยังเป็นมุกตามแบรนด์
+    description: piece.searchDescription,
+    keywords: [...piece.keywords],
     openGraph: {
       title: `${piece.title} · Nº ${piece.id}`,
       description: piece.ogTagline,
@@ -52,8 +55,26 @@ export default async function PiecePage({ params, searchParams }: PageParams) {
 
   const initialState = parseShareState(await searchParams, logic.verdictCount);
 
+  // structured data ให้ search engine / AI เข้าใจว่าหน้านี้คือเว็บแอปเล่นฟรี
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: piece.title,
+    url: `${getBaseUrl()}/n/${piece.id}`,
+    description: piece.searchDescription,
+    applicationCategory: "EntertainmentApplication",
+    operatingSystem: "Web",
+    inLanguage: "th",
+    isAccessibleForFree: true,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "THB" },
+  };
+
   return (
     <Frame pieceId={piece.id} title={piece.title} subtitle={piece.subtitle}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <PieceUI meta={piece} initialState={initialState} ledgerCount={await readCount(piece.id)} />
     </Frame>
   );

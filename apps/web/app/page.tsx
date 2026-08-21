@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BRAND } from "@/lib/brand";
+import { BRAND, getBaseUrl } from "@/lib/brand";
 import { formatCount } from "@/lib/ledger";
 import { readCounts } from "@/lib/ledger-server";
 import { getReleasedPieces } from "@/lib/registry";
 
 export const metadata: Metadata = {
-  description: `${BRAND.tagline} — ${BRAND.motto}`,
+  description:
+    "รวมมินิแอปไร้สาระเล่นฟรีในเบราว์เซอร์ — วันนี้กินอะไรดี ปุ่มต้องห้าม แบบทดสอบ introvert และอีกมาก ไม่ต้องโหลดแอป ไม่ต้องสมัครสมาชิก เล่นจบใน 1 นาที",
+  keywords: [
+    "เว็บแก้เบื่อ",
+    "เกมแก้เบื่อ ไม่ต้องโหลด",
+    "เว็บไร้สาระ",
+    "มินิเกมออนไลน์ฟรี",
+    "วันนี้กินอะไรดี",
+    "เว็บตลก",
+  ],
   openGraph: {
     images: [{ url: "/api/og?id=064", width: 1200, height: 630, alt: BRAND.name }],
   },
@@ -33,8 +42,35 @@ export default async function PortalPage() {
   // ยอดใช้บริการจริงต่อชิ้น — null เมื่อยังไม่ต่อฐานข้อมูล (ซ่อนตัวเลขแทนโชว์เลขปลอม)
   const usage = await readCounts(pieces.map((piece) => `use:${piece.id}`));
 
+  // structured data: เว็บ + รายการชิ้นงาน ให้ search engine / AI ไล่อ่านคอลเลกชันได้
+  const base = getBaseUrl();
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: BRAND.name,
+    alternateName: "Maison Raisara",
+    url: base,
+    description:
+      "รวมมินิแอปไร้สาระเล่นฟรีในเบราว์เซอร์ เล่นจบใน 1 นาที ไม่ต้องโหลดแอป ไม่ต้องสมัครสมาชิก",
+    inLanguage: "th",
+    hasPart: {
+      "@type": "ItemList",
+      itemListElement: pieces.map((piece, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${base}/n/${piece.id}`,
+        name: piece.title,
+        description: piece.searchDescription,
+      })),
+    },
+  };
+
   return (
     <main className="mx-auto w-full max-w-2xl px-5 pt-12 pb-28 sm:px-8 sm:py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <header className="text-center">
         <p className="font-display inline-block -rotate-2 rounded-full border-[3px] border-ink bg-sun px-4 py-1 text-[0.65rem] font-semibold tracking-[0.14em] text-ink shadow-[3px_3px_0_0_var(--color-ink)] sm:text-xs">
           {BRAND.mark} {BRAND.tagline}
@@ -46,6 +82,10 @@ export default async function PortalPage() {
 
         <p className="font-body mt-3 text-sm font-light text-ink-soft sm:text-base">
           {BRAND.motto}
+        </p>
+
+        <p className="font-body mx-auto mt-2 max-w-md text-[0.72rem] leading-relaxed font-light text-ink-soft/70">
+          มินิแอปแก้เบื่อ เล่นฟรีในเบราว์เซอร์ จบใน 1 นาที ไม่ต้องโหลดแอป ไม่ต้องสมัครสมาชิก
         </p>
 
         <svg
