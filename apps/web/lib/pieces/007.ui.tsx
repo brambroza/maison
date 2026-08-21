@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ResultCard } from "@/components/ResultCard";
+import { recordPlay } from "@/lib/ledger-client";
 import type { ShareState } from "@/lib/share";
 import { labelFor, logic, scoreMessage, verdictIndexFor } from "./007.logic";
 import type { PieceProps } from "./types";
@@ -19,6 +20,7 @@ export default function Piece007({ meta, initialState }: PieceProps) {
   function handleSubmit() {
     const score = scoreMessage(message);
     setState({ v: verdictIndexFor(score), s: score });
+    recordPlay(meta.id);
   }
 
   if (state) {

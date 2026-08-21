@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ResultCard } from "@/components/ResultCard";
+import { recordPlay } from "@/lib/ledger-client";
 import type { ShareState } from "@/lib/share";
 import { listSpeakers, logic } from "./031.logic";
 import type { PieceProps } from "./types";
@@ -38,7 +39,10 @@ export default function Piece031({ meta, initialState }: PieceProps) {
           <li key={speaker}>
             <button
               type="button"
-              onClick={() => setState({ v: index })}
+              onClick={() => {
+                setState({ v: index });
+                recordPlay(meta.id);
+              }}
               className="btn-quiet font-body w-full px-5 py-3 text-sm"
             >
               {speaker}

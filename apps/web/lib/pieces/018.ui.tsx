@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ResultCard } from "@/components/ResultCard";
+import { recordPlay } from "@/lib/ledger-client";
 import type { ShareState } from "@/lib/share";
 import { formatDuration, logic, verdictIndexFor } from "./018.logic";
 import type { PieceProps } from "./types";
@@ -41,6 +42,7 @@ export default function Piece018({ meta, initialState }: PieceProps) {
     const seconds = Math.max(1, Math.floor((Date.now() - startedAt) / 1000));
     setStartedAt(null);
     setState({ v: verdictIndexFor(seconds), s: seconds });
+    recordPlay(meta.id);
   }
 
   if (state) {

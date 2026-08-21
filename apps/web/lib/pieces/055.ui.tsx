@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ResultCard } from "@/components/ResultCard";
+import { recordPlay } from "@/lib/ledger-client";
 import { MAX_FREE_TEXT, sanitizeFreeText, type ShareState } from "@/lib/share";
 import { DURATION_OPTIONS, logic, verdictIndexFor } from "./055.logic";
 import type { PieceProps } from "./types";
@@ -23,6 +24,7 @@ export default function Piece055({ meta, initialState }: PieceProps) {
       s: days,
       ...(cleanTask ? { t: cleanTask } : {}),
     });
+    recordPlay(meta.id);
   }
 
   if (state) {

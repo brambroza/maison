@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ResultCard } from "@/components/ResultCard";
+import { recordPlay } from "@/lib/ledger-client";
 import type { ShareState } from "@/lib/share";
 import { QUESTIONS, energyFrom, logic, verdictIndexFor } from "./077.logic";
 import type { PieceProps } from "./types";
@@ -25,6 +26,7 @@ export default function Piece077({ meta, initialState }: PieceProps) {
 
     const energy = energyFrom(next);
     setState({ v: verdictIndexFor(energy), s: energy });
+    recordPlay(meta.id);
   }
 
   if (state) {

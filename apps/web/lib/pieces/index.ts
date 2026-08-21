@@ -3,12 +3,16 @@ import type { ComponentType } from "react";
 import type { PieceLogic } from "@/lib/share";
 import type { PieceProps } from "./types";
 import { logic as logic007 } from "./007.logic";
+import { logic as logic013 } from "./013.logic";
 import { logic as logic018 } from "./018.logic";
+import { logic as logic026 } from "./026.logic";
 import { logic as logic031 } from "./031.logic";
 import { logic as logic042 } from "./042.logic";
+import { logic as logic048 } from "./048.logic";
 import { logic as logic055 } from "./055.logic";
 import { logic as logic064 } from "./064.logic";
 import { logic as logic077 } from "./077.logic";
+import { logic as logic083 } from "./083.logic";
 import { logic as logic090 } from "./090.logic";
 
 /**
@@ -17,12 +21,16 @@ import { logic as logic090 } from "./090.logic";
  */
 const PIECE_LOGIC: Readonly<Record<string, PieceLogic>> = {
   "007": logic007,
+  "013": logic013,
   "018": logic018,
+  "026": logic026,
   "031": logic031,
   "042": logic042,
+  "048": logic048,
   "055": logic055,
   "064": logic064,
   "077": logic077,
+  "083": logic083,
   "090": logic090,
 };
 
@@ -35,12 +43,16 @@ const PIECE_LOGIC: Readonly<Record<string, PieceLogic>> = {
  */
 export const PIECE_UI: Readonly<Record<string, ComponentType<PieceProps>>> = {
   "007": dynamic(() => import("./007.ui")),
+  "013": dynamic(() => import("./013.ui")),
   "018": dynamic(() => import("./018.ui")),
+  "026": dynamic(() => import("./026.ui")),
   "031": dynamic(() => import("./031.ui")),
   "042": dynamic(() => import("./042.ui")),
+  "048": dynamic(() => import("./048.ui")),
   "055": dynamic(() => import("./055.ui")),
   "064": dynamic(() => import("./064.ui")),
   "077": dynamic(() => import("./077.ui")),
+  "083": dynamic(() => import("./083.ui")),
   "090": dynamic(() => import("./090.ui")),
 };
 

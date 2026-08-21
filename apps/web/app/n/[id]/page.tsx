@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Frame } from "@/components/Frame";
-import { getCount } from "@/lib/ledger";
+import { readCount } from "@/lib/ledger-server";
 import { PIECE_UI, getPieceLogic } from "@/lib/pieces";
 import { getPiece } from "@/lib/registry";
 import { parseShareState, toShareQuery } from "@/lib/share";
@@ -54,7 +54,7 @@ export default async function PiecePage({ params, searchParams }: PageParams) {
 
   return (
     <Frame pieceId={piece.id} title={piece.title} subtitle={piece.subtitle}>
-      <PieceUI meta={piece} initialState={initialState} ledgerCount={getCount(piece.id)} />
+      <PieceUI meta={piece} initialState={initialState} ledgerCount={await readCount(piece.id)} />
     </Frame>
   );
 }

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BRAND } from "@/lib/brand";
+import { formatCount } from "@/lib/ledger";
+import { readCounts } from "@/lib/ledger-server";
 import { getReleasedPieces } from "@/lib/registry";
 
 export const metadata: Metadata = {
@@ -9,6 +11,9 @@ export const metadata: Metadata = {
     images: [{ url: "/api/og?id=064", width: 1200, height: 630, alt: BRAND.name }],
   },
 };
+
+/** ยอดใช้บริการเปลี่ยนตลอดเวลา — ปิด cache ของหน้า portal */
+export const dynamic = "force-dynamic";
 
 /** สีป้ายเลขชิ้นงาน วนใช้ตามลำดับให้ชั้นวางดูมีชีวิต */
 const BADGE_COLORS = ["bg-pop", "bg-sun", "bg-lilac", "bg-mint"] as const;
@@ -22,8 +27,11 @@ const BADGE_TEXT: Record<(typeof BADGE_COLORS)[number], string> = {
 };
 
 /** หน้าตู้โชว์คอลเลกชัน — รายชื่อชิ้นงานทั้งหมดของสมาคม */
-export default function PortalPage() {
+export default async function PortalPage() {
   const pieces = getReleasedPieces();
+
+  // ยอดใช้บริการจริงต่อชิ้น — null เมื่อยังไม่ต่อฐานข้อมูล (ซ่อนตัวเลขแทนโชว์เลขปลอม)
+  const usage = await readCounts(pieces.map((piece) => `use:${piece.id}`));
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8 sm:py-16">
@@ -83,6 +91,11 @@ export default function PortalPage() {
                   <span className="font-body mt-0.5 text-[0.78rem] leading-relaxed font-light text-ink-soft">
                     {piece.subtitle}
                   </span>
+                  {usage?.get(`use:${piece.id}`) ? (
+                    <span className="font-body mt-1 text-[0.66rem] font-light text-lilac">
+                      รับบริการแล้ว {formatCount(usage.get(`use:${piece.id}`) ?? 0)} ครั้ง
+                    </span>
+                  ) : null}
                 </span>
 
                 <span

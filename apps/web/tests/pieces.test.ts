@@ -6,6 +6,10 @@ import { formatDuration as duration018, verdictIndexFor as verdict018 } from "@/
 import { listSpeakers } from "@/lib/pieces/031.logic";
 import { DURATION_OPTIONS, formatDuration as duration055, verdictIndexFor as verdict055 } from "@/lib/pieces/055.logic";
 import { verdictIndexFor as verdict064 } from "@/lib/pieces/064.logic";
+import { logic as logic013 } from "@/lib/pieces/013.logic";
+import { STRANGERS, dailyStranger, logic as logic026 } from "@/lib/pieces/026.logic";
+import { formatValuation, ideaCountFor, valuationFor, verdictIndexFor as verdict048 } from "@/lib/pieces/048.logic";
+import { GOSSIP_LINES, GOSSIP_SCHEDULE, SESSION_SECONDS, verdictIndexFor as verdict083 } from "@/lib/pieces/083.logic";
 import { FULL_ENERGY, QUESTIONS, energyFrom, verdictIndexFor as verdict077 } from "@/lib/pieces/077.logic";
 
 describe("ทะเบียนชิ้นงาน", () => {
@@ -134,5 +138,76 @@ describe("Nº 077 มาตรวัดพลังสังคม", () => {
       expect(verdict077(energy)).toBeGreaterThanOrEqual(0);
       expect(verdict077(energy)).toBeLessThan(count);
     }
+  });
+});
+
+describe("Nº 013 สำนักวินิจฉัยทรงผม", () => {
+  it("ตอบว่าก็แล้วแต่ทุกคำวินิจฉัย", () => {
+    for (let v = 0; v < logic013.verdictCount; v += 1) {
+      expect(logic013.toOutcome({ v }).headline).toBe("ก็แล้วแต่");
+    }
+  });
+});
+
+describe("Nº 026 คนแปลกหน้าประจำวัน", () => {
+  it("วันเดียวกันได้คนเดียวกันเสมอ", () => {
+    const morning = Date.UTC(2026, 8, 1, 2, 0);
+    const evening = Date.UTC(2026, 8, 1, 14, 0);
+
+    expect(dailyStranger(morning)).toEqual(dailyStranger(evening));
+  });
+
+  it("ดัชนีอยู่ในช่วงของรายชื่อและคำชมเสมอ", () => {
+    for (let day = 0; day < 30; day += 1) {
+      const { nameIndex, complimentIndex } = dailyStranger(Date.UTC(2026, 8, 1) + day * 86_400_000);
+      expect(nameIndex).toBeGreaterThanOrEqual(0);
+      expect(nameIndex).toBeLessThan(STRANGERS.length);
+      expect(complimentIndex).toBeGreaterThanOrEqual(0);
+      expect(complimentIndex).toBeLessThan(logic026.verdictCount);
+    }
+  });
+
+  it("s เกินช่วงรายชื่อไม่ทำให้การ์ดพัง (mod กลับเข้าช่วง)", () => {
+    expect(logic026.toOutcome({ v: 0, s: 9_999 }).verdict.length).toBeGreaterThan(0);
+  });
+});
+
+describe("Nº 048 มูลค่าไอเดียในห้องน้ำ", () => {
+  it("อาบนานขึ้นมูลค่าสูงขึ้นและจำนวนไอเดียไม่ลดลง", () => {
+    expect(valuationFor(600)).toBeGreaterThan(valuationFor(60));
+    expect(ideaCountFor(600)).toBeGreaterThanOrEqual(ideaCountFor(60));
+  });
+
+  it("มีอย่างน้อยหนึ่งไอเดียเสมอ แม้อาบสั้นมาก", () => {
+    expect(ideaCountFor(1)).toBe(1);
+  });
+
+  it("มูลค่า deterministic — วินาทีเดิมได้ตัวเลขเดิม (การ์ดที่แชร์ต้องคงที่)", () => {
+    expect(formatValuation(754)).toBe(formatValuation(754));
+  });
+
+  it("ดัชนีคำวินิจฉัยอยู่ในช่วงทุกระดับเวลา", () => {
+    for (const seconds of [1, 179, 180, 479, 899, 1799, 99_999]) {
+      const index = verdict048(seconds);
+      expect(index).toBeGreaterThanOrEqual(0);
+      expect(index).toBeLessThan(5);
+    }
+  });
+});
+
+describe("Nº 083 สมาธิสนามจริง", () => {
+  it("ไม่เถียงเลยได้ระดับสูงสุด ยิ่งเถียงยิ่งตก", () => {
+    expect(verdict083(0)).toBe(0);
+    expect(verdict083(2)).toBe(1);
+    expect(verdict083(4)).toBe(2);
+    expect(verdict083(20)).toBe(3);
+  });
+
+  it("ตารางเสียงนินทาอยู่ในช่วงเวลานั่งสมาธิทั้งหมด", () => {
+    for (const at of GOSSIP_SCHEDULE) {
+      expect(at).toBeGreaterThan(0);
+      expect(at).toBeLessThan(SESSION_SECONDS);
+    }
+    expect(GOSSIP_LINES.length).toBeGreaterThanOrEqual(GOSSIP_SCHEDULE.length);
   });
 });

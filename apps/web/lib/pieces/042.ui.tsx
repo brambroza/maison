@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ResultCard } from "@/components/ResultCard";
+import { recordPlay } from "@/lib/ledger-client";
 import type { ShareState } from "@/lib/share";
 import { DELIBERATION_SECONDS, drawResolutionIndex, logic } from "./042.logic";
 import type { PieceProps } from "./types";
@@ -40,10 +41,11 @@ export default function Piece042({ meta, initialState }: PieceProps) {
       window.clearInterval(timer);
       setDeadline(null);
       setState({ v: drawResolutionIndex() });
+      recordPlay(meta.id);
     }, 250);
 
     return () => window.clearInterval(timer);
-  }, [deadline]);
+  }, [deadline, meta.id]);
 
   function handleRequest() {
     setRemaining(DELIBERATION_SECONDS);

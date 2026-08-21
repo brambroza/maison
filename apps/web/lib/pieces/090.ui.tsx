@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { ResultCard } from "@/components/ResultCard";
 import { COPY } from "@/lib/brand";
-import { formatCount, increment } from "@/lib/ledger";
+import { formatCount } from "@/lib/ledger";
+import { bump, recordPlay } from "@/lib/ledger-client";
 import type { ShareState } from "@/lib/share";
 import { drawVerdictIndex, logic } from "./090.logic";
 import type { PieceProps } from "./types";
@@ -39,7 +40,9 @@ export default function Piece090({ meta, initialState, ledgerCount }: PieceProps
   }, [state]);
 
   async function handleJoin() {
-    const nextCount = await increment(count);
+    // ยอดจริงจากสมุดบัญชีกลาง — ถ้ายังไม่เปิดใช้ ถอยไปบวกเองในเครื่อง
+    const nextCount = (await bump(meta.id)) ?? count + 1;
+    recordPlay(meta.id);
     setCount(nextCount);
     setState({ v: drawVerdictIndex(), s: nextCount });
   }
