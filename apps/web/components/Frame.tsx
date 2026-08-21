@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Entrance } from "@/components/motion/Entrance";
+import { Squiggle } from "@/components/motion/Squiggle";
 import { BRAND } from "@/lib/brand";
 
 type FrameProps = {
@@ -22,7 +24,7 @@ type FrameProps = {
 export function Frame({ pieceId, title, subtitle, children }: FrameProps) {
   return (
     <main className="flex h-dvh flex-col overflow-hidden px-5 pt-5 pb-20 sm:px-8 sm:py-7">
-      <header className="shrink-0 text-center">
+      <Entrance className="shrink-0 text-center" stagger={0.06} rise={14}>
         <Link
           href="/"
           className="font-display inline-block -rotate-2 rounded-full border-[3px] border-ink bg-sun px-4 py-1 text-[0.65rem] font-semibold tracking-[0.14em] text-ink shadow-[3px_3px_0_0_var(--color-ink)] transition-transform hover:rotate-0 sm:text-xs"
@@ -46,8 +48,13 @@ export function Frame({ pieceId, title, subtitle, children }: FrameProps) {
           </p>
         ) : null}
 
-        <Squiggle />
-      </header>
+        <Squiggle
+          className="mx-auto mt-3 h-3 w-36 text-pop"
+          viewBox="0 0 144 12"
+          path="M2 8 Q 11 1, 20 8 T 38 8 T 56 8 T 74 8 T 92 8 T 110 8 T 128 8 T 142 8"
+          delay={0.38}
+        />
+      </Entrance>
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
         {children}
@@ -57,24 +64,5 @@ export function Frame({ pieceId, title, subtitle, children }: FrameProps) {
         {BRAND.tagline} — {BRAND.motto}
       </footer>
     </main>
-  );
-}
-
-/** เส้นหยักลูกคลื่นคั่นหัวกระดาษ แทนเส้นทองอันเคร่งขรึมของฉบับก่อน */
-function Squiggle() {
-  return (
-    <svg
-      className="mx-auto mt-3 h-3 w-36 text-pop"
-      viewBox="0 0 144 12"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M2 8 Q 11 1, 20 8 T 38 8 T 56 8 T 74 8 T 92 8 T 110 8 T 128 8 T 142 8"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }

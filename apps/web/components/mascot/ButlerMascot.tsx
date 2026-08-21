@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BRAND } from "@/lib/brand";
+import { asideRequested, onAside } from "@/lib/mascot/attention";
 import { drawChatter, type ButlerMood } from "@/lib/mascot/chatter";
 import { createPointerSignal, type MascotReport, type PointerSignal } from "./shared";
 
@@ -22,7 +23,16 @@ const POKE_RADIUS = 76;
  * บัตเลอร์ถอยไปพักแล้วหรือยัง — เก็บในหน่วยความจำเท่านั้น
  * รีเซ็ตเมื่อโหลดหน้าใหม่ทั้งหน้า ตามกติกาของสมาคมที่ห้ามใช้ localStorage
  */
-let dismissed = false;
+let resting = false;
+
+/**
+ * สถานะการปรากฏตัวของบัตเลอร์
+ *
+ * waiting = ยังไม่ถึงเวลาเข้าฉาก · attending = อยู่รับใช้ ·
+ * resting = ถอยไปพักตามคำสั่ง (มีปุ่มเรียกกลับ) ·
+ * excused = ท่านสมาชิกตั้งค่าลดการเคลื่อนไหวไว้ จึงไม่ต้องปรากฏตัวเลย
+ */
+type Presence = "waiting" | "attending" | "resting" | "excused";
 
 /** บัตเลอร์เว้นจังหวะให้หน้าเว็บวาดเสร็จและให้ป้ายต้อนรับได้พูดก่อน */
 const ENTRANCE_DELAY_MS = 900;
@@ -35,7 +45,7 @@ const ENTRANCE_DELAY_MS = 900;
  * ตำแหน่งเขียนลง style โดยตรงทุกเฟรม จึงไม่ทำให้หน้าเว็บ re-render ตาม
  */
 export function ButlerMascot() {
-  const [awake, setAwake] = useState(false);
+  const [presence, setPresence] = useState<Presence>("waiting");
   const [line, setLine] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -46,13 +56,21 @@ export function ButlerMascot() {
   const headAt = useRef({ x: -999, y: -999 });
   const lastLine = useRef<string | null>(null);
   const hideTimer = useRef<number | null>(null);
+  /**
+   * ป้ายคำพูดหยุดนิ่งขณะแสดงผล
+   *
+   * ถ้าปล่อยให้วิ่งตามศีรษะตลอด ตัวหนังสือจะสั่นจนอ่านยาก
+   * และปุ่มขอให้ถอยไปพักจะกดไม่โดนเมื่อบัตเลอร์เดินหนี
+   */
+  const bubblePinned = useRef(false);
 
   useEffect(() => {
-    if (dismissed) return;
-
     // ท่านสมาชิกที่ตั้งค่าลดการเคลื่อนไหวไว้ ไม่ควรเจอตัวละครเดินไปมาทั้งหน้าจอ
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const settle = () => setAwake(!media.matches && !dismissed);
+    const settle = () => {
+      if (media.matches) setPresence("excused");
+      else setPresence(resting ? "resting" : "attending");
+    };
 
     const timer = window.setTimeout(settle, ENTRANCE_DELAY_MS);
     media.addEventListener("change", settle);
@@ -63,9 +81,20 @@ export function ButlerMascot() {
     };
   }, []);
 
+  // ── คำสั่งให้ถอยไปยืนข้าง เมื่อมีคำวินิจฉัยขึ้นจอ ──────────
+  useEffect(() => {
+    if (presence !== "attending") return;
+
+    pointer.current.aside = asideRequested();
+
+    return onAside((aside) => {
+      pointer.current.aside = aside;
+    });
+  }, [presence]);
+
   // ── รับตำแหน่งเมาส์และนิ้ว แล้วแปลงเป็นพิกัดของกล้อง ──────────
   useEffect(() => {
-    if (!awake) return;
+    if (presence !== "attending") return;
 
     let rect = frame.current?.getBoundingClientRect() ?? null;
     let previous: { x: number; y: number; at: number } | null = null;
@@ -127,7 +156,7 @@ export function ButlerMascot() {
       window.removeEventListener("resize", remeasure);
       window.removeEventListener("scroll", remeasure);
     };
-  }, [awake]);
+  }, [presence]);
 
   // ── ตำแหน่งศีรษะจากฉาก เขียนลง style ตรง ๆ ทุกเฟรม ──────────
   const handleReport = useCallback((report: MascotReport) => {
@@ -135,7 +164,7 @@ export function ButlerMascot() {
     headAt.current.y = report.y;
 
     const bubble = bubbleAnchor.current;
-    if (bubble) {
+    if (bubble && !bubblePinned.current) {
       const limit = Math.max(BUBBLE_MARGIN, report.width - BUBBLE_MARGIN);
       const x = Math.min(Math.max(report.x, BUBBLE_MARGIN), limit);
       bubble.style.transform = `translate3d(${x}px, ${report.y}px, 0)`;
@@ -147,9 +176,13 @@ export function ButlerMascot() {
     lastLine.current = next;
     setLine(next);
     setVisible(true);
+    bubblePinned.current = true;
 
     if (hideTimer.current !== null) window.clearTimeout(hideTimer.current);
-    hideTimer.current = window.setTimeout(() => setVisible(false), BUBBLE_MS);
+    hideTimer.current = window.setTimeout(() => {
+      bubblePinned.current = false;
+      setVisible(false);
+    }, BUBBLE_MS);
   }, []);
 
   useEffect(
@@ -165,7 +198,29 @@ export function ButlerMascot() {
     [handleReport, say],
   );
 
-  if (!awake) return null;
+  if (presence === "waiting" || presence === "excused") return null;
+
+  if (presence === "resting") {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          resting = false;
+          setPresence("attending");
+        }}
+        className="btn-quiet font-display fixed right-4 bottom-[5.6rem] z-40 flex items-center gap-2 px-4 py-2.5 text-xs font-semibold sm:bottom-5"
+      >
+        {/* ถาดเสิร์ฟ — ตราเดียวกับปุ่มกลางของแถบบัตเลอร์ */}
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
+          <path d="M4 15a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+          <path d="M2.5 15h19" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+          <circle cx="12" cy="5.5" r="1.7" fill="currentColor" />
+        </svg>
+        ขอเรียกบัตเลอร์
+      </button>
+    );
+  }
+
 
   return (
     <div
@@ -196,8 +251,8 @@ export function ButlerMascot() {
               <button
                 type="button"
                 onClick={() => {
-                  dismissed = true;
-                  setAwake(false);
+                  resting = true;
+                  setPresence("resting");
                 }}
                 className="font-body pointer-events-auto mt-2 cursor-pointer text-[0.6rem] font-light text-ink-soft underline underline-offset-2"
               >

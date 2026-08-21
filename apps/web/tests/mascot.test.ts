@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CHATTER, drawChatter, type ButlerMood } from "@/lib/mascot/chatter";
+import { blendFace, FACES, restingFace } from "@/lib/mascot/face";
 import {
   ARRIVED_DISTANCE,
   clampToStage,
@@ -12,6 +13,10 @@ import {
   turnToward,
   walkSwing,
   wrapAngle,
+  bankAngle,
+  restingSpring,
+  springTo,
+  squashStretch,
 } from "@/lib/mascot/gait";
 
 const MOODS: readonly ButlerMood[] = ["arrive", "idle", "chase", "poke", "lost"];
@@ -162,6 +167,106 @@ describe("กติกาถ้อยคำของสมาคม", () => {
   it("ไม่เอ่ยถึงกลไกเบื้องหลัง", () => {
     for (const line of lines) {
       expect(line).not.toMatch(/เมาส์|เคอร์เซอร์|คลิก|สามมิติ|เว็บ|ระบบ|โค้ด|แอป/);
+    }
+  });
+});
+
+describe("springTo", () => {
+  it("เข้าหาเป้าหมายจนนิ่งในเวลาอันสมควร", () => {
+    let spring = restingSpring();
+    for (let index = 0; index < 120; index += 1) {
+      spring = springTo(spring, 1, 1 / 60);
+    }
+
+    expect(spring.value).toBeCloseTo(1, 3);
+    expect(Math.abs(spring.velocity)).toBeLessThan(0.01);
+  });
+
+  it("เลยเป้าหมายไปเล็กน้อยก่อนกลับมา จึงดูมีน้ำหนัก", () => {
+    let spring = restingSpring();
+    let peak = 0;
+    for (let index = 0; index < 60; index += 1) {
+      spring = springTo(spring, 1, 1 / 60);
+      peak = Math.max(peak, spring.value);
+    }
+
+    expect(peak).toBeGreaterThan(1);
+    expect(peak).toBeLessThan(1.5);
+  });
+
+  it("ไม่ระเบิดเมื่อเฟรมกระตุกยาว", () => {
+    let spring = restingSpring();
+    for (let index = 0; index < 40; index += 1) {
+      spring = springTo(spring, 1, 3);
+    }
+
+    expect(Number.isFinite(spring.value)).toBe(true);
+    expect(Math.abs(spring.value)).toBeLessThan(4);
+  });
+});
+
+describe("squashStretch", () => {
+  it("ไม่บิดรูปเลยเมื่อยืนนิ่ง", () => {
+    for (const phase of [0, 1.2, 3.4]) {
+      expect(squashStretch(phase, 0)).toEqual({ scaleY: 1, scaleXZ: 1 });
+    }
+  });
+
+  it("สูงขึ้นตอนลอย และเตี้ยลงตอนเท้าถึงพื้น", () => {
+    const airborne = squashStretch(Math.PI / 2, 1);
+    const grounded = squashStretch(0, 1);
+
+    expect(airborne.scaleY).toBeGreaterThan(1);
+    expect(airborne.scaleXZ).toBeLessThan(1);
+    expect(grounded.scaleY).toBeLessThan(1);
+    expect(grounded.scaleXZ).toBeGreaterThan(1);
+  });
+
+  it("ไม่ยุบจนติดลบแม้เดินเต็มฝีเท้า", () => {
+    for (let phase = 0; phase < 7; phase += 0.1) {
+      const shape = squashStretch(phase, 1);
+      expect(shape.scaleY).toBeGreaterThan(0.5);
+      expect(shape.scaleXZ).toBeGreaterThan(0.5);
+    }
+  });
+});
+
+describe("bankAngle", () => {
+  it("เอนเข้าในโค้ง คือเอนสวนทิศที่หมุน", () => {
+    expect(bankAngle(2)).toBeLessThan(0);
+    expect(bankAngle(-2)).toBeGreaterThan(0);
+  });
+
+  it("ไม่เอนเกินขีดจำกัดแม้หมุนเร็วผิดปกติ", () => {
+    expect(Math.abs(bankAngle(999))).toBeLessThanOrEqual(0.3);
+  });
+});
+
+describe("blendFace", () => {
+  it("ทุกอารมณ์ต้องมีสีหน้ากำกับไว้", () => {
+    for (const mood of [...MOODS, "neutral" as const]) {
+      expect(FACES[mood]).toBeDefined();
+    }
+  });
+
+  it("อยู่ที่เดิมเมื่อยังไม่เกลี่ย และถึงเป้าหมายเมื่อเกลี่ยเต็ม", () => {
+    const from = restingFace();
+
+    expect(blendFace(from, FACES.poke, 0)).toEqual(from);
+    expect(blendFace(from, FACES.poke, 1)).toEqual(FACES.poke);
+  });
+
+  it("ไม่หลุดกรอบแม้ส่งค่าเกินช่วงมา", () => {
+    const blended = blendFace(restingFace(), FACES.chase, 5);
+
+    expect(blended).toEqual(FACES.chase);
+  });
+
+  it("ระดับการอ้าปากของทุกอารมณ์อยู่ในช่วงศูนย์ถึงหนึ่ง", () => {
+    for (const shape of Object.values(FACES)) {
+      expect(shape.mouthOpen).toBeGreaterThanOrEqual(0);
+      expect(shape.mouthOpen).toBeLessThanOrEqual(1);
+      expect(Math.abs(shape.mouthCurve)).toBeLessThanOrEqual(1);
     }
   });
 });

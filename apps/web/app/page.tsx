@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CountUp } from "@/components/motion/CountUp";
+import { Entrance } from "@/components/motion/Entrance";
+import { Shelf } from "@/components/motion/Shelf";
+import { Squiggle } from "@/components/motion/Squiggle";
 import { BRAND, getBaseUrl } from "@/lib/brand";
-import { formatCount } from "@/lib/ledger";
 import { readCounts } from "@/lib/ledger-server";
 import { getReleasedPieces } from "@/lib/registry";
 
@@ -71,7 +74,7 @@ export default async function PortalPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <header className="text-center">
+      <Entrance className="text-center" stagger={0.08} rise={18}>
         <p className="font-display inline-block -rotate-2 rounded-full border-[3px] border-ink bg-sun px-4 py-1 text-[0.65rem] font-semibold tracking-[0.14em] text-ink shadow-[3px_3px_0_0_var(--color-ink)] sm:text-xs">
           {BRAND.mark} {BRAND.tagline}
         </p>
@@ -88,26 +91,19 @@ export default async function PortalPage() {
           มินิแอปแก้เบื่อ เล่นฟรีในเบราว์เซอร์ จบใน 1 นาที ไม่ต้องโหลดแอป ไม่ต้องสมัครสมาชิก
         </p>
 
-        <svg
+        <Squiggle
           className="mx-auto mt-6 h-3 w-44 text-pop"
           viewBox="0 0 176 12"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M2 8 Q 11 1, 20 8 T 38 8 T 56 8 T 74 8 T 92 8 T 110 8 T 128 8 T 146 8 T 164 8 T 174 8"
-            stroke="currentColor"
-            strokeWidth="3"
-            strokeLinecap="round"
-          />
-        </svg>
-      </header>
+          path="M2 8 Q 11 1, 20 8 T 38 8 T 56 8 T 74 8 T 92 8 T 110 8 T 128 8 T 146 8 T 164 8 T 174 8"
+          delay={0.45}
+        />
+      </Entrance>
 
       <p className="font-display mt-9 text-center text-[0.7rem] font-semibold tracking-[0.2em] text-ink-soft uppercase">
         คอลเลกชันประจำฤดูกาล
       </p>
 
-      <ul className="mt-6 flex flex-col gap-4">
+      <Shelf className="mt-6 flex flex-col gap-4">
         {pieces.map((piece, index) => {
           const badge = BADGE_COLORS[index % BADGE_COLORS.length];
           const tilt = index % 2 === 0 ? "hover:-rotate-1" : "hover:rotate-1";
@@ -133,7 +129,7 @@ export default async function PortalPage() {
                   </span>
                   {usage?.get(`use:${piece.id}`) ? (
                     <span className="font-body mt-1 text-[0.66rem] font-light text-lilac">
-                      รับบริการแล้ว {formatCount(usage.get(`use:${piece.id}`) ?? 0)} ครั้ง
+                      รับบริการแล้ว <CountUp value={usage.get(`use:${piece.id}`) ?? 0} /> ครั้ง
                     </span>
                   ) : null}
                 </span>
@@ -148,7 +144,7 @@ export default async function PortalPage() {
             </li>
           );
         })}
-      </ul>
+      </Shelf>
 
       <footer className="font-display mt-12 text-center text-[0.68rem] leading-loose font-semibold tracking-[0.12em] text-ink-soft/80">
         {BRAND.mark} ทุกชิ้นงานรังสรรค์ด้วยมือช่างฝีมือของสมาคม

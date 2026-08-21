@@ -6,6 +6,13 @@ import * as THREE from "three";
 import { COLORS } from "@/lib/brand";
 import type { ButlerMood } from "@/lib/mascot/chatter";
 import {
+  blendFace,
+  FACES,
+  restingFace,
+  type FaceMood,
+  type FaceShape,
+} from "@/lib/mascot/face";
+import {
   ARRIVED_DISTANCE,
   clampToStage,
   distance,
@@ -15,7 +22,12 @@ import {
   turnToward,
   walkSwing,
   wrapAngle,
+  bankAngle,
+  restingSpring,
+  springTo,
+  squashStretch,
   STAGE,
+  type Spring,
   type Ground,
   type Stage,
 } from "@/lib/mascot/gait";
@@ -34,7 +46,28 @@ const CHATTER_COOLDOWN_MS = 7_000;
 const FRANTIC_SPEED = 1.15;
 
 /** องศาที่บัตเลอร์เงยหน้าไว้เป็นพื้น เพื่อให้เห็นใบหน้าจากมุมกล้องที่ก้มลงมา */
-const HEAD_LIFT = 0.32;
+const HEAD_LIFT = 0.24;
+
+/** สีหน้าตามอารมณ์ค้างอยู่เท่านี้ ก่อนกลับสู่สีหน้าปกติ */
+const EXPRESSION_MS = 5_200;
+
+/** ตำแหน่งพักของคิ้วบนใบหน้า */
+const BROW_BASE_Y = 0.24;
+
+/** ถูกทักแล้วบัตเลอร์หยุดหันมาหาท่านสมาชิกนานเท่านี้ ก่อนกลับไปทำหน้าที่ */
+const ATTEND_MS = 2_000;
+
+/** จอที่แคบกว่านี้ไม่มีที่ว่างข้างเนื้อหา ต้องหลบลงข้างล่างแทน (พิกเซล) */
+const NARROW_WIDTH = 768;
+
+/**
+ * จุดยืนหลบ ระบุเป็นพิกัดบนจอ ไม่ใช่พิกัดบนพื้น
+ *
+ * เพราะกรอบภาพแคบลงเมื่อเข้าใกล้กล้อง จุดบนพื้นจุดเดียวกัน
+ * จึงอยู่กลางจอบนเครื่องหนึ่งและหลุดขอบบนอีกเครื่องหนึ่ง
+ */
+const ASIDE_WIDE = { x: 0.72, y: -0.45 };
+const ASIDE_NARROW = { x: 0.5, y: -1 };
 
 /**
  * ชิ้นส่วนหนึ่งชิ้นของบัตเลอร์ พร้อมเส้นขอบหมึกรอบตัว
@@ -96,6 +129,14 @@ type Brain = {
   pokes: number;
   blinkAt: number;
   wasNear: boolean;
+  /** ถึงเวลานี้จึงจะเลิกหันมาหาท่านสมาชิกแล้วกลับไปเดินตามเคอร์เซอร์ */
+  attendUntil: number;
+  /** สีหน้าที่กำลังแสดงอยู่ เกลี่ยเข้าหาสีหน้าเป้าหมายทีละเฟรม */
+  face: FaceShape;
+  /** ชิ้นส่วนที่แกว่งตามหลังตัวหลัก */
+  tail: Spring;
+  hat: Spring;
+  tray: Spring;
 };
 
 export type ButlerRigProps = {
@@ -127,6 +168,13 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
   const armLeft = useRef<THREE.Group>(null);
   const armRight = useRef<THREE.Group>(null);
   const crown = useRef<THREE.Group>(null);
+  const browLeft = useRef<THREE.Mesh>(null);
+  const browRight = useRef<THREE.Mesh>(null);
+  const mouthLine = useRef<THREE.Mesh>(null);
+  const mouthHole = useRef<THREE.Mesh>(null);
+  const tail = useRef<THREE.Group>(null);
+  const tray = useRef<THREE.Group>(null);
+  const shadow = useRef<THREE.Mesh>(null);
 
   const brain = useRef<Brain>({
     position: { x: 0, z: 0 },
@@ -140,6 +188,11 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
     pokes: 0,
     blinkAt: 0,
     wasNear: true,
+    attendUntil: 0,
+    face: restingFace(),
+    tail: restingSpring(),
+    hat: restingSpring(),
+    tray: restingSpring(),
   });
 
   // เครื่องมือเรขาคณิตที่ใช้ซ้ำทุกเฟรม สร้างครั้งเดียวเพื่อไม่ให้เกิดขยะในลูป
@@ -163,7 +216,6 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
 
     const now = performance.now();
     const mind = brain.current;
-
     const signal = pointer.current;
     const silence = now - signal.movedAt;
 
@@ -171,10 +223,31 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
     // จึงนับว่า "กำลังรีบ" เฉพาะตอนที่เพิ่งขยับจริง ๆ เท่านั้น
     const rush = silence < 260 ? signal.speed : 0;
 
+    // ── ถูกทัก ────────────────────────────────────────
+    // ตรวจก่อนอย่างอื่น เพราะการถูกทักสั่งให้หยุดทุกอย่างแล้วหันมาหาท่านสมาชิก
+    const poked = signal.pokes !== mind.pokes;
+    if (poked) {
+      mind.pokes = signal.pokes;
+      mind.attendUntil = now + ATTEND_MS;
+    }
+
     // ── หาเป้าหมายบนพื้น ────────────────────────────────
     let following = false;
+    // จุดที่ท่านแตะคือศีรษะ ซึ่งแปลงกลับเป็นพื้นได้จุดที่อยู่ไกลกว่าตัวบัตเลอร์เสมอ
+    // ถ้าปล่อยให้เดินตามจุดนั้น บัตเลอร์จะหันหลังเดินหนีทุกครั้งที่ถูกทัก
+    const attending = now < mind.attendUntil;
 
-    if (signal.inside && silence < IDLE_MS) {
+    if (attending) {
+      mind.target = mind.position;
+    } else if (signal.aside) {
+      // จอกว้างหลบไปยืนข้างเนื้อหา จอแคบไม่มีที่ว่างข้าง ๆ จึงลงไปยืนข้างล่างแทน
+      const spot = size.width < NARROW_WIDTH ? ASIDE_NARROW : ASIDE_WIDE;
+      tools.ndc.set(spot.x, spot.y);
+      tools.raycaster.setFromCamera(tools.ndc, camera);
+      if (tools.raycaster.ray.intersectPlane(tools.floor, tools.hit)) {
+        mind.target = { x: tools.hit.x, z: tools.hit.z };
+      }
+    } else if (signal.inside && silence < IDLE_MS) {
       tools.ndc.set(signal.ndcX, signal.ndcY);
       tools.raycaster.setFromCamera(tools.ndc, camera);
       if (tools.raycaster.ray.intersectPlane(tools.floor, tools.hit)) {
@@ -183,7 +256,7 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
       }
     }
 
-    if (!following && now > mind.wanderAt) {
+    if (!following && !attending && !signal.aside && now > mind.wanderAt) {
       // ท่านสมาชิกวางมือแล้ว บัตเลอร์จึงเดินตรวจตราไปเรื่อย
       mind.target = pickWanderTarget(mind.position, Math.random, stage);
       mind.wanderAt = now + 2_600 + Math.random() * 3_000;
@@ -194,13 +267,18 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
     const step = stepToward(mind.position, mind.target, delta);
     mind.position = step.position;
 
-    if (gap > ARRIVED_DISTANCE) {
+    const wasFacing = mind.heading;
+    if (attending) {
+      // ทิศศูนย์คือหันหน้าเข้าหาผู้ชม
+      mind.heading = turnToward(mind.heading, 0, delta);
+    } else if (gap > ARRIVED_DISTANCE) {
       mind.heading = turnToward(
         mind.heading,
         facingAngle(mind.position, mind.target),
         delta,
       );
     }
+    const turnRate = wrapAngle(mind.heading - wasFacing) / delta;
 
     // ความแรงของฝีเท้าไล่ตามระยะที่เดินได้จริง เพื่อให้เริ่มและหยุดอย่างนุ่มนวล
     const intensity = Math.min(1, step.travelled / (delta * 2.4));
@@ -216,19 +294,40 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
     const swing = walkSwing(mind.phase, 0) * mind.stride;
     const swingBack = walkSwing(mind.phase, Math.PI) * mind.stride;
 
+    const bank = bankAngle(turnRate);
+    const bounce =
+      Math.abs(Math.sin(mind.phase)) * 0.075 * mind.stride +
+      Math.sin(now / 620) * 0.012 * (1 - mind.stride);
+
     if (bob.current) {
-      // ตัวเด้งสองครั้งต่อหนึ่งก้าว บวกการหายใจเบา ๆ ตอนยืนนิ่ง
-      bob.current.position.y =
-        Math.abs(Math.sin(mind.phase)) * 0.075 * mind.stride +
-        Math.sin(now / 620) * 0.012 * (1 - mind.stride);
-      bob.current.rotation.z = swing * 0.05;
+      bob.current.position.y = bounce;
+      // เอนเข้าในโค้งเวลาเลี้ยว บวกการโยกตามจังหวะก้าว
+      bob.current.rotation.z = bank + swing * 0.05;
+      // ยืดตอนลอย บี้ตอนเท้าถึงพื้น
+      const shape = squashStretch(mind.phase, mind.stride);
+      bob.current.scale.set(shape.scaleXZ, shape.scaleY, shape.scaleXZ);
     }
 
-    if (legLeft.current) legLeft.current.rotation.x = swing * 0.85;
-    if (legRight.current) legRight.current.rotation.x = swingBack * 0.85;
+    if (shadow.current) {
+      // เงาหดลงเมื่อตัวลอยขึ้น ให้รู้สึกว่าเท้าลอยพ้นพื้นจริง
+      const shrink = 1 - bounce * 1.6;
+      shadow.current.scale.set(shrink, shrink, 1);
+    }
+
+    // ── ชิ้นส่วนที่แกว่งตามหลัง ────────────────────────
+    mind.tail = springTo(mind.tail, mind.stride * 0.42 - turnRate * 0.04, delta, 90, 11);
+    mind.hat = springTo(mind.hat, -turnRate * 0.03 + swing * 0.05, delta, 150, 12);
+    mind.tray = springTo(mind.tray, -mind.stride * 0.18 + swingBack * 0.1, delta, 130, 9);
+
+    if (tail.current) tail.current.rotation.x = 0.2 + mind.tail.value;
+    if (tray.current) tray.current.rotation.x = mind.tray.value;
+
+    // ขาสั้นจู๋ ถ้าเหวี่ยงเท่าขายาวจะดูเหมือนตีลังกามากกว่าเดิน
+    if (legLeft.current) legLeft.current.rotation.x = swing * 0.58;
+    if (legRight.current) legRight.current.rotation.x = swingBack * 0.58;
     // แขนซ้ายแกว่งสวนขา ส่วนแขนขวาต้องประคองถาดจึงนิ่งกว่ามาก
-    if (armLeft.current) armLeft.current.rotation.x = swingBack * 0.6;
-    if (armRight.current) armRight.current.rotation.x = -0.25 + swing * 0.12;
+    if (armLeft.current) armLeft.current.rotation.x = swingBack * 0.46;
+    if (armRight.current) armRight.current.rotation.x = -0.2 + swing * 0.1;
 
     // ── หัวและตาที่คอยสอดส่อง ───────────────────────────
     const watching: Ground = following
@@ -263,16 +362,15 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
     }
 
     if (crown.current) {
-      // หมวกไหวตามจังหวะเดินเล็กน้อย ราวกับใส่ไม่แน่น
-      crown.current.rotation.z = 0.1 + swing * 0.045;
+      // หมวกไหวตามหลังการเคลื่อนไหวเล็กน้อย ราวกับใส่ไม่แน่น
+      crown.current.rotation.z = 0.1 + mind.hat.value;
     }
 
     // ── อารมณ์และการเม้าท์ ─────────────────────────────
     let mood: ButlerMood | null = null;
     const near = gap <= ARRIVED_DISTANCE;
 
-    if (signal.pokes !== mind.pokes) {
-      mind.pokes = signal.pokes;
+    if (poked) {
       mood = "poke";
     } else if (silence > LOST_MS) {
       mood = "lost";
@@ -294,6 +392,34 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
       }
     }
 
+    // ── สีหน้า ────────────────────────────────────────
+    // อารมณ์ค้างอยู่ครู่หนึ่งแล้วใบหน้ากลับสู่ความสงบตามมารยาท
+    const shown: FaceMood = now - mind.spokeAt < EXPRESSION_MS ? mind.mood : "neutral";
+    mind.face = blendFace(mind.face, FACES[shown], Math.min(1, delta * 7));
+    const face = mind.face;
+
+    if (browLeft.current && browRight.current) {
+      browLeft.current.position.y = BROW_BASE_Y + face.browLift;
+      browRight.current.position.y = BROW_BASE_Y + face.browLift + face.browSkew;
+      // ปลายคิ้วด้านในตกลงเมื่อขมวด จึงต้องกลับทิศกันสองข้าง
+      browLeft.current.rotation.z = -face.browAngle;
+      browRight.current.rotation.z = face.browAngle + face.browSkew * 1.6;
+    }
+
+    if (mouthLine.current) {
+      // ครึ่งวงกลมคว่ำอยู่แล้ว จึงพลิกครึ่งรอบเมื่อยิ้ม และย่อจนหายเมื่อปากเรียบ
+      mouthLine.current.rotation.z = face.mouthCurve >= 0 ? Math.PI : 0;
+      mouthLine.current.scale.set(1, Math.abs(face.mouthCurve), 1);
+    }
+
+    if (mouthHole.current) {
+      const open = Math.max(0.001, face.mouthOpen);
+      mouthHole.current.scale.set(0.8 + open * 0.4, open, open);
+    }
+
+    // ตาเบิกกว้างขึ้นตอนตกใจ ตามระดับการอ้าปาก
+    if (eyes.current) eyes.current.scale.setScalar(1 + face.mouthOpen * 0.16);
+
     // ── รายงานตำแหน่งศีรษะกลับไปให้ป้ายคำพูดตามติด ──────────
     if (head.current) {
       head.current.getWorldPosition(tools.screen);
@@ -310,197 +436,209 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
 
   return (
     <group ref={root} dispose={null}>
-      {/* เงาแบนขอบคมใต้เท้า วาดเองแทนการคำนวณเงาจริง เพื่อให้เข้ากับเงาแข็งของแบรนด์ */}
-      <mesh rotation-x={-Math.PI / 2} position={[0.12, 0.02, 0.1]}>
-        <circleGeometry args={[0.62, 28]} />
+      {/* เงาแบนขอบคมใต้ตัว วาดเองแทนการคำนวณเงาจริง เพื่อให้เข้ากับเงาแข็งของแบรนด์ */}
+      <mesh ref={shadow} rotation-x={-Math.PI / 2} position={[0.1, 0.02, 0.08]}>
+        <circleGeometry args={[0.78, 28]} />
         <meshBasicMaterial color={COLORS.ink} transparent opacity={0.16} />
       </mesh>
 
       <group ref={bob}>
-        {/* ขาและรองเท้าหัวมน */}
-        <group ref={legLeft} position={[-0.18, 0.44, 0]}>
-          <InkPart {...ink} color={COLORS.ink} position={[0, -0.21, 0]} outline={1.16}>
-            <capsuleGeometry args={[0.1, 0.2, 4, 14]} />
+        {/* ขาสั้นจู๋ ปลายมนกลม — ตัวกลมป้อมต้องมีขาเตี้ยจึงจะดูเป็นตุ๊กตา */}
+        <group ref={legLeft} position={[-0.24, 0.34, 0]}>
+          <InkPart {...ink} color={COLORS.paper} position={[0, -0.11, 0.02]} outline={1.14}>
+            <capsuleGeometry args={[0.16, 0.06, 5, 16]} />
           </InkPart>
-          <InkPart {...ink} color={COLORS.sun} position={[0, -0.4, 0.07]} outline={1.16}>
-            <boxGeometry args={[0.22, 0.12, 0.3]} />
+          <InkPart {...ink} color={COLORS.sun} position={[0, -0.22, 0.03]} outline={1.16}>
+            <sphereGeometry args={[0.12, 14, 12]} />
           </InkPart>
         </group>
-        <group ref={legRight} position={[0.18, 0.44, 0]}>
-          <InkPart {...ink} color={COLORS.ink} position={[0, -0.21, 0]} outline={1.16}>
-            <capsuleGeometry args={[0.1, 0.2, 4, 14]} />
+        <group ref={legRight} position={[0.24, 0.34, 0]}>
+          <InkPart {...ink} color={COLORS.paper} position={[0, -0.11, 0.02]} outline={1.14}>
+            <capsuleGeometry args={[0.16, 0.06, 5, 16]} />
           </InkPart>
-          <InkPart {...ink} color={COLORS.sun} position={[0, -0.4, 0.07]} outline={1.16}>
-            <boxGeometry args={[0.22, 0.12, 0.3]} />
+          <InkPart {...ink} color={COLORS.sun} position={[0, -0.22, 0.03]} outline={1.16}>
+            <sphereGeometry args={[0.12, 14, 12]} />
           </InkPart>
         </group>
 
-        {/* ลำตัวในเสื้อหางยาว */}
-        <InkPart {...ink} color={COLORS.ink} position={[0, 0.88, 0]} outline={1.05}>
-          <capsuleGeometry args={[0.36, 0.24, 6, 22]} />
-        </InkPart>
-        {/* ชายเสื้อด้านหลัง */}
-        <InkPart
-          {...ink}
-          color={COLORS.ink}
-          position={[0, 0.66, -0.3]}
-          rotation={[0.2, 0, 0]}
-          outline={1.1}
-        >
-          <boxGeometry args={[0.46, 0.6, 0.12]} />
-        </InkPart>
-        {/* หน้าอกเสื้อเชิ้ต */}
+        {/* ลำตัว — ก้อนกลมก้อนเดียว ไม่มีเอว ไม่มีคอ */}
         <InkPart
           {...ink}
           color={COLORS.paper}
-          position={[0, 0.96, 0.31]}
-          rotation={[0.05, 0, 0]}
-          outline={1.09}
+          position={[0, 0.86, 0]}
+          scale={[1, 0.94, 0.96]}
+          outline={1.05}
         >
-          <boxGeometry args={[0.26, 0.42, 0.12]} />
+          <sphereGeometry args={[0.62, 28, 24]} />
         </InkPart>
-        {/* ปกเสื้อสีขาว ตัดเงามืดของเสื้อคลุมไม่ให้กลืนกับศีรษะ */}
+
+        {/* หางกลมเล็กด้านหลัง แขวนไว้ให้แกว่งตามจังหวะเดิน */}
+        <group ref={tail} position={[0, 0.88, -0.5]}>
+          <InkPart {...ink} color={COLORS.paper} position={[0, -0.06, -0.1]} outline={1.2}>
+            <sphereGeometry args={[0.17, 16, 14]} />
+          </InkPart>
+        </group>
+
+        {/* ผ้ากั๊กสีม่วงลูกกวาด — ถ้าตัวเป็นครีมล้วน ขอบหมึกจะไม่มีอะไรตัด */}
         <InkPart
           {...ink}
-          color={COLORS.paper}
-          position={[0, 1.29, 0.02]}
-          rotation={[Math.PI / 2, 0, 0]}
-          outline={1.12}
+          color={COLORS.lilac}
+          position={[0, 0.78, 0.3]}
+          scale={[0.62, 0.78, 0.42]}
+          outline={1.08}
         >
-          <torusGeometry args={[0.25, 0.062, 10, 26]} />
+          <sphereGeometry args={[0.52, 22, 18]} />
         </InkPart>
-        {/* หูกระต่าย */}
-        <group position={[0, 1.31, 0.28]}>
+
+        {/* หูกระต่ายประจำตำแหน่ง คาดไว้ใต้คาง */}
+        <group position={[0, 1.29, 0.42]}>
           <InkPart
             {...ink}
             color={COLORS.pop}
-            position={[-0.11, 0, 0]}
+            position={[-0.12, 0, 0]}
             rotation={[0, 0, Math.PI / 2]}
             outline={1.22}
           >
-            <coneGeometry args={[0.11, 0.18, 4]} />
+            <coneGeometry args={[0.12, 0.2, 4]} />
           </InkPart>
           <InkPart
             {...ink}
             color={COLORS.pop}
-            position={[0.11, 0, 0]}
+            position={[0.12, 0, 0]}
             rotation={[0, 0, -Math.PI / 2]}
             outline={1.22}
           >
-            <coneGeometry args={[0.11, 0.18, 4]} />
+            <coneGeometry args={[0.12, 0.2, 4]} />
           </InkPart>
           <InkPart {...ink} color={COLORS.pop} outline={1.34}>
-            <sphereGeometry args={[0.055, 12, 10]} />
+            <sphereGeometry args={[0.06, 12, 10]} />
           </InkPart>
         </group>
 
-        {/* แขน กางออกเล็กน้อยให้เห็นแยกจากลำตัว */}
-        <group ref={armLeft} position={[-0.44, 1.14, 0.12]} rotation={[0, 0, 0.52]}>
-          <InkPart {...ink} color={COLORS.ink} position={[0, -0.23, 0]} outline={1.2}>
-            <capsuleGeometry args={[0.09, 0.28, 4, 14]} />
-          </InkPart>
-          <InkPart {...ink} color={COLORS.paper} position={[0, -0.46, 0]} outline={1.2}>
-            <sphereGeometry args={[0.12, 16, 14]} />
+        {/* แขนสั้นจิ๋ว ยื่นออกข้างตัวเหมือนตุ๊กตาผ้า */}
+        <group ref={armLeft} position={[-0.58, 1.0, 0.06]} rotation={[0, 0, 0.66]}>
+          <InkPart {...ink} color={COLORS.paper} position={[0, -0.14, 0]} outline={1.16}>
+            <capsuleGeometry args={[0.145, 0.1, 5, 16]} />
           </InkPart>
         </group>
-        <group ref={armRight} position={[0.44, 1.14, 0.12]} rotation={[0, 0, -0.52]}>
-          <InkPart {...ink} color={COLORS.ink} position={[0, -0.23, 0]} outline={1.2}>
-            <capsuleGeometry args={[0.09, 0.28, 4, 14]} />
-          </InkPart>
-          <InkPart {...ink} color={COLORS.paper} position={[0, -0.46, 0]} outline={1.2}>
-            <sphereGeometry args={[0.12, 16, 14]} />
+        <group ref={armRight} position={[0.58, 1.0, 0.06]} rotation={[0, 0, -0.66]}>
+          <InkPart {...ink} color={COLORS.paper} position={[0, -0.14, 0]} outline={1.16}>
+            <capsuleGeometry args={[0.145, 0.1, 5, 16]} />
           </InkPart>
           {/* ถาดเสิร์ฟประจำตัว — ตราสัญลักษณ์เดียวกับปุ่มกลางของแถบบัตเลอร์ */}
-          <group position={[0.02, -0.6, 0.14]} rotation={[0, 0, 0.52]}>
+          <group ref={tray} position={[0.04, -0.36, 0.16]} rotation={[0, 0, 0.66]}>
             <InkPart {...ink} color={COLORS.sun} outline={1.08}>
-              <cylinderGeometry args={[0.26, 0.26, 0.04, 24]} />
+              <cylinderGeometry args={[0.24, 0.24, 0.04, 24]} />
             </InkPart>
             <InkPart {...ink} color={COLORS.mint} position={[0, 0.07, 0]} outline={1.24}>
-              <sphereGeometry args={[0.085, 14, 12]} />
+              <sphereGeometry args={[0.08, 14, 12]} />
             </InkPart>
           </group>
         </group>
 
-        {/* ศีรษะ */}
-        <group ref={head} position={[0, 1.74, 0]}>
+        {/* ศีรษะ — กลมโตเกือบเท่าลำตัว วางติดตัวโดยไม่มีคอคั่น */}
+        <group ref={head} position={[0, 1.72, 0]}>
+          {/* หูกลมเล็กสองข้าง วางเยื้องไปหลังเล็กน้อยตามหัวที่กลม */}
+          <InkPart {...ink} color={COLORS.paper} position={[-0.4, 0.4, -0.04]} outline={1.2}>
+            <sphereGeometry args={[0.19, 16, 14]} />
+          </InkPart>
+          <InkPart {...ink} color={COLORS.paper} position={[0.4, 0.4, -0.04]} outline={1.2}>
+            <sphereGeometry args={[0.19, 16, 14]} />
+          </InkPart>
           <InkPart {...ink} color={COLORS.paper} outline={1.05}>
-            <sphereGeometry args={[0.44, 28, 24]} />
+            <sphereGeometry args={[0.56, 30, 26]} />
           </InkPart>
 
           {/* ดวงตา — ชั้น lids ใช้ย่อแนวตั้งตอนกะพริบ */}
           <group ref={lids}>
             <group ref={eyes}>
-              {/* ดวงตาเป็นจุดหมึกทึบ อ่านง่ายกว่าลูกตาขาวบนใบหน้าสีเดียวกัน */}
-              <group position={[-0.19, 0.12, 0.36]}>
+              {/* จุดหมึกทึบเม็ดเล็ก วางห่างกันมาก จึงได้แววตาซื่อแบบตุ๊กตา */}
+              <group position={[-0.22, 0.06, 0.5]}>
                 <mesh>
-                  <sphereGeometry args={[0.105, 18, 16]} />
+                  <sphereGeometry args={[0.082, 18, 16]} />
                   <meshBasicMaterial color={COLORS.ink} />
                 </mesh>
-                <mesh position={[-0.035, 0.04, 0.075]}>
-                  <sphereGeometry args={[0.035, 12, 10]} />
+                <mesh position={[-0.026, 0.032, 0.058]}>
+                  <sphereGeometry args={[0.028, 12, 10]} />
                   <meshBasicMaterial color={COLORS.paper} />
                 </mesh>
               </group>
-              <group position={[0.19, 0.12, 0.36]}>
+              <group position={[0.22, 0.06, 0.5]}>
                 <mesh>
-                  <sphereGeometry args={[0.105, 18, 16]} />
+                  <sphereGeometry args={[0.082, 18, 16]} />
                   <meshBasicMaterial color={COLORS.ink} />
                 </mesh>
-                <mesh position={[-0.035, 0.04, 0.075]}>
-                  <sphereGeometry args={[0.035, 12, 10]} />
+                <mesh position={[-0.026, 0.032, 0.058]}>
+                  <sphereGeometry args={[0.028, 12, 10]} />
                   <meshBasicMaterial color={COLORS.paper} />
                 </mesh>
               </group>
             </group>
           </group>
 
+          {/* คิ้ว — ตัวแสดงอารมณ์หลัก ต้องบางและสั้น ไม่งั้นหน้าจะแก่เกินวัย */}
+          <mesh ref={browLeft} position={[-0.22, BROW_BASE_Y, 0.45]} rotation={[0, 0, 0.06]}>
+            <boxGeometry args={[0.12, 0.03, 0.05]} />
+            <meshBasicMaterial color={COLORS.ink} />
+          </mesh>
+          <mesh ref={browRight} position={[0.22, BROW_BASE_Y, 0.45]} rotation={[0, 0, -0.06]}>
+            <boxGeometry args={[0.12, 0.03, 0.05]} />
+            <meshBasicMaterial color={COLORS.ink} />
+          </mesh>
+
+          {/* แก้มสีชมพูลูกกวาด แปะแบนไปกับผิวหน้า */}
+          <mesh position={[-0.36, -0.1, 0.4]} scale={[1, 0.72, 0.3]}>
+            <sphereGeometry args={[0.11, 14, 12]} />
+            <meshBasicMaterial color={COLORS.pop} transparent opacity={0.75} />
+          </mesh>
+          <mesh position={[0.36, -0.1, 0.4]} scale={[1, 0.72, 0.3]}>
+            <sphereGeometry args={[0.11, 14, 12]} />
+            <meshBasicMaterial color={COLORS.pop} transparent opacity={0.75} />
+          </mesh>
+
+          {/* จมูกเม็ดเล็ก จุดกลางของใบหน้าแทนหนวดเดิม */}
+          <mesh position={[0, -0.07, 0.52]} scale={[1.25, 0.9, 0.7]}>
+            <sphereGeometry args={[0.062, 14, 12]} />
+            <meshBasicMaterial color={COLORS.ink} />
+          </mesh>
+
+          {/* ปาก — เส้นโค้งพลิกได้ระหว่างยิ้มกับเบ้ และช่องปากที่อ้าได้ */}
+          <group position={[0, -0.21, 0.5]}>
+            <mesh ref={mouthLine}>
+              <torusGeometry args={[0.075, 0.019, 8, 18, Math.PI]} />
+              <meshBasicMaterial color={COLORS.ink} />
+            </mesh>
+            <mesh ref={mouthHole} position={[0, -0.03, 0.01]} scale={[0.8, 0.001, 0.001]}>
+              <sphereGeometry args={[0.08, 16, 14]} />
+              <meshBasicMaterial color={COLORS.ink} />
+            </mesh>
+          </group>
+
           {/* แว่นตาข้างเดียวประจำตำแหน่ง สวมพอดีดวงตาขวา */}
-          <InkPart {...ink} color={COLORS.sun} position={[0.19, 0.12, 0.42]} outline={1.16}>
-            <torusGeometry args={[0.15, 0.022, 10, 26]} />
+          <InkPart {...ink} color={COLORS.sun} position={[0.22, 0.06, 0.52]} outline={1.16}>
+            <torusGeometry args={[0.14, 0.02, 10, 26]} />
           </InkPart>
 
-          {/* หนวด */}
-          <InkPart
-            {...ink}
-            color={COLORS.ink}
-            position={[-0.085, -0.15, 0.42]}
-            rotation={[0, 0, 0.42]}
-            scale={[1, 0.34, 0.42]}
-            outline={1.2}
-          >
-            <sphereGeometry args={[0.11, 14, 12]} />
-          </InkPart>
-          <InkPart
-            {...ink}
-            color={COLORS.ink}
-            position={[0.085, -0.15, 0.42]}
-            rotation={[0, 0, -0.42]}
-            scale={[1, 0.34, 0.42]}
-            outline={1.2}
-          >
-            <sphereGeometry args={[0.11, 14, 12]} />
-          </InkPart>
-
-          {/* หมวกทรงสูง ปีกแคบพอให้เห็นหน้า */}
-          <group ref={crown} position={[0, 0.4, -0.04]} rotation={[0, 0, 0.11]}>
+          {/* หมวกทรงสูงใบย่อม วางเอียงบนหัวกลม ปีกแคบพอให้เห็นหน้า */}
+          <group ref={crown} position={[0, 0.5, -0.06]} rotation={[0, 0, 0.11]}>
             <InkPart {...ink} color={COLORS.ink} outline={1.07}>
-              <cylinderGeometry args={[0.42, 0.42, 0.05, 26]} />
+              <cylinderGeometry args={[0.36, 0.36, 0.05, 26]} />
             </InkPart>
-            <InkPart {...ink} color={COLORS.ink} position={[0, 0.25, 0]} outline={1.06}>
-              <cylinderGeometry args={[0.26, 0.27, 0.46, 24]} />
+            <InkPart {...ink} color={COLORS.ink} position={[0, 0.2, 0]} outline={1.06}>
+              <cylinderGeometry args={[0.24, 0.25, 0.36, 24]} />
             </InkPart>
-            <InkPart {...ink} color={COLORS.pop} position={[0, 0.07, 0]} outline={1.05}>
-              <cylinderGeometry args={[0.28, 0.285, 0.1, 24]} />
+            <InkPart {...ink} color={COLORS.pop} position={[0, 0.06, 0]} outline={1.05}>
+              <cylinderGeometry args={[0.26, 0.265, 0.09, 24]} />
             </InkPart>
             {/* ตราข้าวหลามตัดของสมาคม */}
             <InkPart
               {...ink}
               color={COLORS.sun}
-              position={[0, 0.07, 0.28]}
+              position={[0, 0.06, 0.26]}
               rotation={[0, 0, Math.PI / 4]}
               outline={1.36}
             >
-              <boxGeometry args={[0.11, 0.11, 0.03]} />
+              <boxGeometry args={[0.1, 0.1, 0.03]} />
             </InkPart>
           </group>
         </group>

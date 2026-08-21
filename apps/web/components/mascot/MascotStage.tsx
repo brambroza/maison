@@ -106,6 +106,9 @@ export default function MascotStage(props: {
   return (
     <Canvas
       className="absolute! inset-0"
+      // react-three-fiber ใส่ pointerEvents เป็น inline style ของตัวเอง
+      // ซึ่งชนะคลาสจาก tailwind ต้องสั่งทับตรงนี้ ไม่เช่นนั้นบัตเลอร์จะกินคลิกทั้งหน้าเว็บ
+      style={{ pointerEvents: "none" }}
       dpr={[1, 1.75]}
       gl={{ antialias: true, alpha: true }}
       camera={{ position: INITIAL_CAMERA, fov: FOV, near: 1, far: 90 }}
@@ -113,6 +116,9 @@ export default function MascotStage(props: {
         camera.lookAt(0, 1.3, 0);
         gl.setClearAlpha(0);
         gl.toneMapping = THREE.NoToneMapping;
+        // ผืนผ้าใบตั้ง pointer-events ของตัวเองไว้ ต้องปิดตรงนี้ด้วย
+        // ไม่เช่นนั้นบัตเลอร์จะกินคลิกของทั้งหน้าเว็บ ปุ่มทุกปุ่มจะกดไม่ได้
+        gl.domElement.style.pointerEvents = "none";
       }}
     >
       <Scene {...props} />

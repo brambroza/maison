@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { COPY } from "@/lib/brand";
+import { gsap, prefersReducedMotion } from "@/lib/motion/gsap";
 import { buildShareUrl, shareResult, type ShareState } from "@/lib/share";
 
 type ShareButtonProps = {
@@ -20,10 +21,24 @@ type ShareButtonProps = {
  */
 export function ShareButton({ pieceId, pieceTitle, state }: ShareButtonProps) {
   const [label, setLabel] = useState<string>(COPY.shareCta);
+  const button = useRef<HTMLButtonElement>(null);
+
+  /** ปั๊มปุ่มลงหนึ่งครั้งเป็นการรับทราบ เหมือนตรายางกระทบกระดาษ */
+  function acknowledge() {
+    if (!button.current || prefersReducedMotion()) return;
+
+    gsap.fromTo(
+      button.current,
+      { scale: 0.94 },
+      { scale: 1, duration: 0.45, ease: "elastic.out(1, 0.45)", clearProps: "transform" },
+    );
+  }
 
   async function handleShare() {
     const origin = window.location.origin;
     const outcome = await shareResult(buildShareUrl(origin, pieceId, state), pieceTitle);
+
+    acknowledge();
 
     if (outcome === "copied") {
       setLabel(COPY.shareCopied);
@@ -33,6 +48,7 @@ export function ShareButton({ pieceId, pieceTitle, state }: ShareButtonProps) {
 
   return (
     <button
+      ref={button}
       type="button"
       onClick={handleShare}
       className="btn-stamp btn-stamp-hover font-display px-7 py-2.5 text-sm font-semibold sm:text-base"

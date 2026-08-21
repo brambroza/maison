@@ -147,3 +147,59 @@ export function pickWanderTarget(
     stage,
   );
 }
+
+/** สถานะของสปริงหนึ่งตัว ใช้ทำการเคลื่อนไหวที่ตามหลังตัวหลักอย่างมีน้ำหนัก */
+export type Spring = {
+  value: number;
+  velocity: number;
+};
+
+/** สปริงที่ยังไม่ขยับ */
+export function restingSpring(value = 0): Spring {
+  return { value, velocity: 0 };
+}
+
+/**
+ * ขยับสปริงเข้าหาเป้าหมายหนึ่งเฟรม
+ *
+ * ใช้กับชิ้นส่วนที่ควรแกว่งตามหลังตัวหลัก เช่น หางเสื้อกับถาด
+ * ค่า damping ต่ำกว่าจุดวิกฤตเล็กน้อย จึงเลยเป้าไปนิดหนึ่งก่อนกลับมา
+ */
+export function springTo(
+  state: Spring,
+  target: number,
+  delta: number,
+  stiffness = 120,
+  damping = 13,
+): Spring {
+  // เฟรมที่กระตุกยาวจะทำให้สปริงแบบนี้ระเบิด จึงตัดช่วงเวลาไว้ที่ 1/30 วินาที
+  const step = Math.min(Math.max(delta, 0), 1 / 30);
+  const acceleration = (target - state.value) * stiffness - state.velocity * damping;
+  const velocity = state.velocity + acceleration * step;
+
+  return { value: state.value + velocity * step, velocity };
+}
+
+/**
+ * การยืดและบี้ของลำตัวในหนึ่งจังหวะก้าว
+ *
+ * ช่วงที่ตัวลอยขึ้นจะสูงและผอมลง ช่วงที่เท้ากระแทกพื้นจะเตี้ยและแบะออก
+ * เมื่อยืนนิ่ง (stride เป็นศูนย์) ทั้งสองค่าต้องเท่ากับหนึ่งพอดี
+ */
+export function squashStretch(phase: number, stride: number): { scaleY: number; scaleXZ: number } {
+  const lift = Math.abs(Math.sin(phase)) - 0.5;
+
+  return {
+    scaleY: 1 + lift * 0.18 * stride,
+    scaleXZ: 1 - lift * 0.12 * stride,
+  };
+}
+
+/**
+ * มุมเอนตัวเข้าโค้ง คำนวณจากความเร็วในการหมุนตัว
+ *
+ * บัตเลอร์เลี้ยวแรงเท่าไรก็เอนเข้าในโค้งมากเท่านั้น เหมือนคนวิ่งเลี้ยว
+ */
+export function bankAngle(turnRate: number, limit = 0.3): number {
+  return Math.min(limit, Math.max(-limit, -turnRate * 0.055));
+}
