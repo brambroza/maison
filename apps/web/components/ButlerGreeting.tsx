@@ -64,7 +64,7 @@ export function ButlerGreeting() {
       role="status"
       aria-live="polite"
       onClick={() => setLeaving(true)}
-      className={`fixed top-3 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 cursor-pointer transition-all duration-300 ${
+      className={`fixed top-3 inset-x-4 z-[60] mx-auto block max-w-sm cursor-pointer transition-all duration-300 ${
         leaving ? "-translate-y-24 opacity-0" : "animate-greet-in"
       }`}
     >
