@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Mali, Mitr } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ButlerBar } from "@/components/ButlerBar";
+import { ButlerGreeting } from "@/components/ButlerGreeting";
 import { BRAND, COLORS, getBaseUrl } from "@/lib/brand";
 import "./globals.css";
 
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col">
         {children}
+        <ButlerGreeting />
         <ButlerBar />
         <Analytics />
       </body>
