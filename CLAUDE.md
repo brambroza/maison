@@ -190,9 +190,16 @@ maison-raisara/  (monorepo — GitHub)
 - ห้ามขอโทษเกินหนึ่งครั้งต่อบทสนทนา บัตเลอร์ "รับไว้พิจารณา"
 - ห้ามพาดพิงบุคคลจริงหรือแบรนด์จริงในทางเสียหาย
 
-### ยังไม่ได้ทำในรอบนี้
+### Workflow ออกชิ้นใหม่ (เพิ่ม 2026-08-21)
+- `/new-piece <Nº>` — สร้างชิ้นใหม่จาก `content/ideas.md` ครบวงจร (artisan → court-poet → inspector → commit บน branch)
+- `/release [Nº]` — ตรวจ + push + ยืนยัน production + ร่างประกาศลง `content/scripts/`
+- `/share-card <Nº>` — ปรับ/ตรวจการ์ดแชร์ render ทุก state ดูด้วยตา
+- agents: artisan (โค้ด) · court-poet (ถ้อยคำ) · inspector (ตรวจก่อนปล่อย) ใน `.claude/agents/`
+- production: https://maison-go.vercel.app (Vercel auto-deploy จาก main · env `NEXT_PUBLIC_SITE_URL` ตั้งแล้ว)
+
+### ยังไม่ได้ทำ
 LINE OA · LIFF · บัตเลอร์ตอบแชทด้วย Claude API · Supabase · โดเมนจริง ·
-บัญชี TikTok/Facebook · `.claude/commands` และ sub-agents · Cowork weekly loop
+บัญชี TikTok/Facebook · Cowork weekly loop
 
 ### ทิศทางดีไซน์ v2 (2026-08-20)
 เปลี่ยนจาก luxury noir/gold เป็น "สมาคมทางการที่ใช้สีลูกกวาด" ตามคำสั่งเจ้าของแบรนด์ —
