@@ -235,7 +235,9 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
     let following = false;
     // จุดที่ท่านแตะคือศีรษะ ซึ่งแปลงกลับเป็นพื้นได้จุดที่อยู่ไกลกว่าตัวบัตเลอร์เสมอ
     // ถ้าปล่อยให้เดินตามจุดนั้น บัตเลอร์จะหันหลังเดินหนีทุกครั้งที่ถูกทัก
-    const attending = now < mind.attendUntil;
+    // ระหว่างยกคำถามขึ้นถาม บัตเลอร์ต้องยืนนิ่งหันหน้าเข้าหาท่านสมาชิก
+    const asking = signal.asking;
+    const attending = asking || now < mind.attendUntil;
 
     if (attending) {
       mind.target = mind.position;
@@ -384,7 +386,8 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
 
     mind.wasNear = near;
 
-    if (mood && (mood === "poke" || now - mind.spokeAt > CHATTER_COOLDOWN_MS)) {
+    // ระหว่างรอคำตอบ ห้ามพูดแทรก มิฉะนั้นคำถามจะถูกถ้อยคำอื่นทับหายไป
+    if (!asking && mood && (mood === "poke" || now - mind.spokeAt > CHATTER_COOLDOWN_MS)) {
       if (mood !== mind.mood || mood === "poke") {
         mind.mood = mood;
         mind.spokeAt = now;
@@ -394,7 +397,12 @@ export function ButlerRig({ pointer, onReport, onMood, stage = STAGE }: ButlerRi
 
     // ── สีหน้า ────────────────────────────────────────
     // อารมณ์ค้างอยู่ครู่หนึ่งแล้วใบหน้ากลับสู่ความสงบตามมารยาท
-    const shown: FaceMood = now - mind.spokeAt < EXPRESSION_MS ? mind.mood : "neutral";
+    // ตอนถามใช้สีหน้าคิ้วข้างเดียวยก ซึ่งอ่านออกว่า "แล้วยังไงต่อ"
+    const shown: FaceMood = asking
+      ? "lost"
+      : now - mind.spokeAt < EXPRESSION_MS
+        ? mind.mood
+        : "neutral";
     mind.face = blendFace(mind.face, FACES[shown], Math.min(1, delta * 7));
     const face = mind.face;
 

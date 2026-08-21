@@ -20,11 +20,13 @@ export type PointerSignal = {
   pokes: number;
   /** ถูกสั่งให้ถอยไปยืนข้าง ๆ เพราะมีสิ่งสำคัญกว่าอยู่กลางจอ */
   aside: boolean;
+  /** กำลังยืนถามคำถามอยู่ ต้องหยุดเดินและหันมาหาท่านสมาชิก */
+  asking: boolean;
 };
 
 /** ค่าเริ่มต้นก่อนท่านสมาชิกขยับเมาส์ครั้งแรก */
 export function createPointerSignal(): PointerSignal {
-  return { ndcX: 0, ndcY: -0.2, inside: false, movedAt: 0, speed: 0, pokes: 0, aside: false };
+  return { ndcX: 0, ndcY: -0.2, inside: false, movedAt: 0, speed: 0, pokes: 0, aside: false, asking: false };
 }
 
 /** สิ่งที่ฉากสามมิติรายงานกลับออกมาให้ชั้น DOM ทุกเฟรม */

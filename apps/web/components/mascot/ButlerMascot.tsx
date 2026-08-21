@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BRAND } from "@/lib/brand";
 import { asideRequested, onAside } from "@/lib/mascot/attention";
 import { drawChatter, type ButlerMood } from "@/lib/mascot/chatter";
+import { ANSWERS, INQUIRY, INQUIRY_KICKER, SILENCE_RETORT } from "@/lib/mascot/inquiry";
 import { createPointerSignal, type MascotReport, type PointerSignal } from "./shared";
 
 /** ฉากสามมิติหนักกว่าหน้าเว็บทั้งหน้า จึงโหลดทีหลังและไม่แตะฝั่งเซิร์ฟเวอร์เลย */
@@ -18,6 +19,21 @@ const BUBBLE_MARGIN = 116;
 
 /** แตะใกล้ศีรษะบัตเลอร์ไม่เกินระยะนี้ ถือว่าท่านสมาชิกทักทาย (พิกเซล) */
 const POKE_RADIUS = 76;
+
+/**
+ * บัตเลอร์รอให้ป้ายต้อนรับพูดจบก่อน แล้วจึงเดินมายกคำถามขึ้นถาม
+ * นับจากตอนที่บัตเลอร์เข้าฉาก ไม่ใช่ตอนโหลดหน้า
+ */
+const INQUIRY_DELAY_MS = 4_200;
+
+/** ไม่ตอบภายในเวลานี้ บัตเลอร์จะเลิกรอเอง */
+const INQUIRY_PATIENCE_MS = 22_000;
+
+/**
+ * บัตเลอร์ยกคำถามขึ้นถามไปแล้วหรือยัง — เก็บในหน่วยความจำเท่านั้น
+ * จึงถามครั้งเดียวต่อการเปิดแอปหนึ่งครั้ง และไม่ถามซ้ำตอนกดเปลี่ยนหน้าภายในแอป
+ */
+let asked = false;
 
 /**
  * บัตเลอร์ถอยไปพักแล้วหรือยัง — เก็บในหน่วยความจำเท่านั้น
@@ -48,6 +64,8 @@ export function ButlerMascot() {
   const [presence, setPresence] = useState<Presence>("waiting");
   const [line, setLine] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
+  /** กำลังรอคำตอบอยู่หรือไม่ — ป้ายคำพูดจะมีปุ่มให้เลือกเฉพาะตอนนี้ */
+  const [asking, setAsking] = useState(false);
 
   const pointer = useRef<PointerSignal>(createPointerSignal());
   const frame = useRef<HTMLDivElement>(null);
@@ -171,10 +189,10 @@ export function ButlerMascot() {
     }
   }, []);
 
-  const say = useCallback((mood: ButlerMood) => {
-    const next = drawChatter(mood, lastLine.current);
-    lastLine.current = next;
-    setLine(next);
+  /** ยกป้ายคำพูดขึ้นหนึ่งใบ แล้วปล่อยให้จางหายไปเอง */
+  const speak = useCallback((text: string) => {
+    lastLine.current = text;
+    setLine(text);
     setVisible(true);
     bubblePinned.current = true;
 
@@ -184,6 +202,45 @@ export function ButlerMascot() {
       setVisible(false);
     }, BUBBLE_MS);
   }, []);
+
+  /** ท่านสมาชิกตอบแล้ว บัตเลอร์จึงโต้กลับหนึ่งประโยคแล้วกลับไปทำหน้าที่ */
+  const answer = useCallback(
+    (retort: string) => {
+      pointer.current.asking = false;
+      setAsking(false);
+      speak(retort);
+    },
+    [speak],
+  );
+
+  const say = useCallback((mood: ButlerMood) => {
+    speak(drawChatter(mood, lastLine.current));
+  }, [speak]);
+
+  // ── คำถามแรกเมื่อเปิดแอป ────────────────────────────
+  useEffect(() => {
+    if (presence !== "attending" || asked) return;
+    asked = true;
+
+    const ask = window.setTimeout(() => {
+      pointer.current.asking = true;
+      lastLine.current = INQUIRY;
+      setLine(INQUIRY);
+      setAsking(true);
+      setVisible(true);
+      bubblePinned.current = true;
+    }, INQUIRY_DELAY_MS);
+
+    const giveUp = window.setTimeout(() => {
+      // ยังรอคำตอบอยู่หรือไม่ ตรวจจากสัญญาณ เพราะตอบไปแล้วธงจะถูกลดลง
+      if (pointer.current.asking) answer(SILENCE_RETORT);
+    }, INQUIRY_DELAY_MS + INQUIRY_PATIENCE_MS);
+
+    return () => {
+      window.clearTimeout(ask);
+      window.clearTimeout(giveUp);
+    };
+  }, [presence, answer]);
 
   useEffect(
     () => () => {
@@ -236,21 +293,39 @@ export function ButlerMascot() {
       {/* ป้ายคำพูด ลอยอยู่เหนือหมวก */}
       <div ref={bubbleAnchor} className="absolute top-0 left-0 will-change-transform">
         <div
-          className={`pointer-events-none -mt-16 w-[min(15rem,72vw)] -translate-x-1/2 -translate-y-full transition-opacity duration-300 ${
-            visible ? "opacity-100" : "opacity-0"
-          }`}
+          className={`pointer-events-none -mt-16 -translate-x-1/2 -translate-y-full transition-opacity duration-300 ${
+            asking ? "w-[min(17rem,80vw)]" : "w-[min(15rem,72vw)]"
+          } ${visible ? "opacity-100" : "opacity-0"}`}
         >
           {line ? (
             <div className="card-stamp -rotate-1 px-4 py-3" role="status">
               <p className="font-display text-[0.58rem] font-semibold tracking-[0.16em] text-pop uppercase">
-                {BRAND.mark} บัตเลอร์กระซิบ
+                {BRAND.mark} {asking ? INQUIRY_KICKER : "บัตเลอร์กระซิบ"}
               </p>
               <p className="font-display mt-1 text-[0.82rem] leading-snug font-bold text-ink">
                 {line}
               </p>
+
+              {asking ? (
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
+                  {ANSWERS.map((choice) => (
+                    <button
+                      key={choice.id}
+                      type="button"
+                      onClick={() => answer(choice.retort)}
+                      className="btn-quiet font-display pointer-events-auto px-2.5 py-1 text-[0.66rem] font-semibold"
+                    >
+                      {choice.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
               <button
                 type="button"
                 onClick={() => {
+                  pointer.current.asking = false;
+                  setAsking(false);
                   resting = true;
                   setPresence("resting");
                 }}
