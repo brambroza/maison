@@ -21,7 +21,7 @@ type FrameProps = {
  */
 export function Frame({ pieceId, title, subtitle, children }: FrameProps) {
   return (
-    <main className="flex h-dvh flex-col overflow-hidden px-5 py-5 sm:px-8 sm:py-7">
+    <main className="flex h-dvh flex-col overflow-hidden px-5 pt-5 pb-20 sm:px-8 sm:py-7">
       <header className="shrink-0 text-center">
         <Link
           href="/"
@@ -53,7 +53,7 @@ export function Frame({ pieceId, title, subtitle, children }: FrameProps) {
         {children}
       </div>
 
-      <footer className="font-display shrink-0 pt-3 text-center text-[0.62rem] font-semibold tracking-[0.12em] text-ink-soft/80">
+      <footer className="font-display hidden shrink-0 pt-3 text-center sm:block text-[0.62rem] font-semibold tracking-[0.12em] text-ink-soft/80">
         {BRAND.tagline} — {BRAND.motto}
       </footer>
     </main>

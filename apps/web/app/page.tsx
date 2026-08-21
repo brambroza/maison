@@ -34,7 +34,7 @@ export default async function PortalPage() {
   const usage = await readCounts(pieces.map((piece) => `use:${piece.id}`));
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8 sm:py-16">
+    <main className="mx-auto w-full max-w-2xl px-5 pt-12 pb-28 sm:px-8 sm:py-16">
       <header className="text-center">
         <p className="font-display inline-block -rotate-2 rounded-full border-[3px] border-ink bg-sun px-4 py-1 text-[0.65rem] font-semibold tracking-[0.14em] text-ink shadow-[3px_3px_0_0_var(--color-ink)] sm:text-xs">
           {BRAND.mark} {BRAND.tagline}
